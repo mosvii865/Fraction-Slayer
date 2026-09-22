@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"
+    />
+    <title>Fraction Slayer</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas tabindex="0" id="world" aria-label="Vista de juego"></canvas>
+      <div id="scanlines"></div>
+      <div id="topbar" class="hidden">
+        <span class="brand">FS <i>•</i> DDI</span
+        ><span id="objective">QC // INICIO DE TURNO</span
+        ><button id="pause" aria-label="Pausar">Ⅱ</button
+        ><button id="fullscreen" aria-label="Pantalla completa">⛶</button>
+      </div>
+      <div id="crosshair" class="hidden">+</div>
+      <div id="toast" role="status"></div>
+      <div id="hint"></div>
+      <div id="controls" class="hidden">
+        <div id="look" aria-label="Arrastra para girar"></div>
+        <div id="pad" aria-label="Pad de movimiento de ocho direcciones">
+          <span class="arrows">↑<br />←　 →<br />↓</span>
+          <div id="stick"></div>
+        </div>
+        <button id="interact">E<span>USAR</span></button
+        ><button id="fire">◎<span>DISPARAR</span></button>
+      </div>
+      <div id="hud" class="hidden">
+        <div>
+          <small>CARGADOR</small><strong id="ammo">12</strong
+          ><button id="reload">RECARGAR · R</button>
+        </div>
+        <div>
+          <small>VIDA</small><strong id="health">100</strong>
+          <div class="meter"><i id="healthbar"></i></div>
+        </div>
+        <canvas
+          id="face"
+          width="72"
+          height="64"
+          aria-label="Estado del practicante"
+        ></canvas>
+        <div><small>ARMADURA</small><strong id="armor">0</strong></div>
+        <button id="weapon">
+          <small id="mod">MOD 0</small><b id="weaponname">PISTOLA</b
+          ><span id="reserve">RESERVA 48</span>
+        </button>
+      </div>
+      <div id="overlay"></div>
+      <div id="rotate">
+        <div>↻</div>
+        <h2>ROTATE DEVICE</h2>
+        <p>Fraction Slayer está diseñado<br />para jugarse horizontalmente.</p>
+      </div>
+      <div id="connection" class="hidden">
+        SIN RESPUESTA DE PYTHON · Tu partida está pausada.<button id="retry">
+          REINTENTAR
+        </button>
+      </div>
+    </div>
+    <script src="bridge.js"></script>
+    <script src="renderer.js"></script>
+    <script src="game.js"></script>
+    <script src="realtime.js"></script>
+    <script src="controls.js"></script>
+  </body>
+</html>
