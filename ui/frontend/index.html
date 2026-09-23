@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
-    <title>Fraction Slayer</title>
+    <title>Fraction Slayer v0.1.1</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -24,12 +24,19 @@
       <div id="hint"></div>
       <div id="controls" class="hidden">
         <div id="look" aria-label="Arrastra para girar"></div>
-        <div id="pad" aria-label="Pad de movimiento de ocho direcciones">
-          <span class="arrows">↑<br />←　 →<br />↓</span>
-          <div id="stick"></div>
+        <div id="move-zone" aria-label="Zona de movimiento: toca y arrastra"></div>
+        <div id="pad" aria-hidden="true"><div id="stick"></div></div>
+        <div id="mobile-actions">
+          <button id="weapon-toggle" aria-label="Seleccionar arma" aria-expanded="false" aria-controls="weapon-picker">⇄<span>ARMAS</span></button>
+          <button id="reload-touch" aria-label="Recargar arma">↻<span>RECARGAR</span></button>
+          <button id="interact" aria-label="Interactuar">E<span>USAR</span></button>
+          <button id="fire" aria-label="Disparar">◎<span>DISPARAR</span></button>
         </div>
-        <button id="interact">E<span>USAR</span></button
-        ><button id="fire">◎<span>DISPARAR</span></button>
+        <div id="weapon-picker" class="hidden" role="group" aria-label="Selector rápido de armas">
+          <button data-select-weapon="pistol" aria-label="Seleccionar pistola"><b>1 · PISTOLA</b><span class="weapon-ammo"></span></button>
+          <button data-select-weapon="shotgun" aria-label="Seleccionar escopeta"><b>2 · ESCOPETA</b><span class="weapon-ammo"></span></button>
+          <button id="weapon-close" aria-label="Cerrar selector de armas">CERRAR ×</button>
+        </div>
       </div>
       <div id="hud" class="hidden">
         <div>

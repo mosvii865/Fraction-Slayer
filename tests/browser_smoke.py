@@ -207,11 +207,11 @@ def main():
             assert mf.evaluate("FS.state.enemies.length") == 6
             mp.screenshot(path=str(OUT / "06-mobile-game.png"))
             # Pointer capture multitouch tested with actual CDP touch events below.
-            bb = mf.locator("#pad").bounding_box()
+            bb = mf.locator("#move-zone").bounding_box()
             lb = mf.locator("#look").bounding_box()
             cdp = mobile.new_cdp_session(mp)
             px = bb["x"] + bb["width"] / 2
-            py = bb["y"] + 15
+            py = bb["y"] + bb["height"] * 0.65
             lx = lb["x"] + lb["width"] / 2
             ly = lb["y"] + 40
             initial = mf.evaluate("({x:FS.state.player.x,angle:FS.state.player.angle})")
@@ -231,7 +231,7 @@ def main():
                 {
                     "type": "touchMove",
                     "touchPoints": [
-                        {"x": px, "y": py, "id": 0},
+                        {"x": px, "y": py - 60, "id": 0},
                         {"x": lx + 30, "y": ly, "id": 1},
                     ],
                 },

@@ -28,6 +28,7 @@ function selectWeapon(w) {
     toast("Encuentra la escopeta en la sala inicial");
     return;
   }
+  if (FS.state.weapon !== w) window.InputControls?.haptic("weapon");
   FS.state.weapon = w;
   FS.reloading = 0;
   FS.cooldown = 0.2;
@@ -60,6 +61,7 @@ function shoot() {
   FS.cooldown = cfg.cooldown;
   FS.shotFlash = 0.12;
   sound("shot");
+  window.InputControls?.haptic("shot");
   const p = s.player,
     targets = s.enemies
       .filter((e) => e.hp > 0)
@@ -97,6 +99,7 @@ function hurt(amount) {
   FS.hurtFlash = 0.7;
   expression("hurt");
   sound("hurt");
+  window.InputControls?.haptic("hurt");
   updateHUD();
   if (p.hp <= 0) death();
 }

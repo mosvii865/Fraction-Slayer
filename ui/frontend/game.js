@@ -13,7 +13,7 @@ const FS = (window.FS = {
   state: null,
   config: null,
   playing: false,
-  settings: { sensitivity: 1, sound: true, minimap: true, quality: "normal" },
+  settings: { sensitivity: 1, sound: true, minimap: true, quality: "normal", controlSize: "medium", movementZone: "half", joystickRadius: 60, vibration: false },
   keys: {},
   move: { x: 0, y: 0 },
   moving: 0,
@@ -98,12 +98,13 @@ function expression(type) {
 function lockMouse() {
   try {
     const p = $("#world").requestPointerLock?.();
-    p?.catch(() => toast("Mouse libre: usa ← → para girar."));
+    p?.catch(() => { FS.mouseLockDenied = true; toast("Mouse libre: arrastra con botón derecho para girar; clic izquierdo dispara."); });
   } catch {
-    toast("Usa ← → para girar.");
+    FS.mouseLockDenied = true; toast("Arrastra con botón derecho o usa ← → para girar.");
   }
 }
 function releaseInput() {
+  window.InputControls?.reset();
   FS.keys = {};
   FS.move = { x: 0, y: 0 };
   FS.fireHeld = false;
@@ -112,6 +113,7 @@ function releaseInput() {
 FS.releaseInput = releaseInput;
 function freeze() {
   FS.playing = false;
+  $("#app").classList.remove("is-playing");
   releaseInput();
   if (document.pointerLockElement) document.exitPointerLock();
 }
@@ -181,7 +183,9 @@ function resume() {
     return;
   }
   FS.playing = true;
+  $("#app").classList.add("is-playing");
   releaseInput();
+  window.InputControls?.layout();
   Render.resize();
   updateHUD();
 }
@@ -189,7 +193,7 @@ function mainMenu() {
   freeze();
   uiGameplay(false);
   overlay(
-    `<main class="menu"><div class="hero"><div class="eyebrow">DDI / QUALITY CONTROL DIVISION</div><h1>FRACTION<br><em>SLAYER</em></h1><span class="badge">ESTADÍAS PROFESIONALES • V0.1</span><p>Primer día. Una fábrica fuera de control.<br>Y una máquina que no sabe redondear.</p><p>La matemática no te impide jugar.<br>Te permite jugar mejor.</p></div><nav class="nav"><button class="primary" id="new">NUEVA PARTIDA <small>01</small></button><button id="continue" ${slot ? "" : "disabled"}>CONTINUAR <small>02</small></button><button id="stats">ESTADÍSTICAS <small>03</small></button><button id="settings">CONFIGURACIÓN <small>04</small></button><button id="credits">CRÉDITOS <small>05</small></button><div class="footer">SISTEMA INGLÉS / FRACCIONAL ↔ DECIMAL<br>ORIGINAL PROTOTYPE · SIN TURNO DE SALIDA</div></nav></main>`,
+    `<main class="menu"><div class="hero"><div class="eyebrow">DDI / QUALITY CONTROL DIVISION</div><h1>FRACTION<br><em>SLAYER</em></h1><span class="badge">ESTADÍAS PROFESIONALES • V0.1.1</span><p>Primer día. Una fábrica fuera de control.<br>Y una máquina que no sabe redondear.</p><p>La matemática no te impide jugar.<br>Te permite jugar mejor.</p></div><nav class="nav"><button class="primary" id="new">NUEVA PARTIDA <small>01</small></button><button id="continue" ${slot ? "" : "disabled"}>CONTINUAR <small>02</small></button><button id="stats">ESTADÍSTICAS <small>03</small></button><button id="settings">CONFIGURACIÓN <small>04</small></button><button id="credits">CRÉDITOS <small>05</small></button><div class="footer">SISTEMA INGLÉS / FRACCIONAL ↔ DECIMAL<br>ORIGINAL PROTOTYPE · SIN TURNO DE SALIDA</div></nav></main>`,
   );
   button("new", newGame);
   button("continue", async () => {
@@ -238,7 +242,7 @@ function difficulty(name) {
 function intro() {
   freeze();
   panel(
-    `<div class="eyebrow">DDI // REGISTRO DE INGRESO</div><h2>BIENVENIDO A QUALITY CONTROL</h2><p>Tu asesor dijo que solo había que medir unas piezas. <b>The Converter</b> tenía otros planes.</p><p><b>Objetivo:</b> cruza el pasillo, limpia la arena y calibra la puerta ámbar. La terminal verde da munición; el M.A.D. azul mejora un arma; la escopeta está en la sala inicial.</p><p><b>Móvil:</b> pad izquierdo de 8 direcciones · arrastra a la derecha para girar · DISPARAR / USAR. Toca el arma del HUD para cambiarla.</p><p><b>PC:</b> WASD · clic en la vista para capturar mouse · clic dispara · E usa · R recarga · 1/2 armas · Esc pausa. Flechas ← → también giran.</p><div class="row"><button id="enter" class="primary">ESTO SÍ LO VOY A PONER EN EL REPORTE →</button></div>`,
+    `<div class="eyebrow">DDI // REGISTRO DE INGRESO</div><h2>BIENVENIDO A QUALITY CONTROL</h2><p>Tu asesor dijo que solo había que medir unas piezas. <b>The Converter</b> tenía otros planes.</p><p><b>Objetivo:</b> cruza el pasillo, limpia la arena y calibra la puerta ámbar. La terminal verde da munición; el M.A.D. azul mejora un arma; la escopeta está en la sala inicial.</p><p><b>Móvil:</b> joystick flotante izquierdo · arrastra a la derecha para girar · DISPARAR / USAR. Toca ARMAS para elegir sin dejar de caminar.</p><p><b>PC:</b> WASD · clic izquierdo dispara · mouse capturado o arrastre derecho gira · E usa · R recarga · 1/2 armas · Esc pausa. Flechas ← → también giran.</p><div class="row"><button id="enter" class="primary">ESTO SÍ LO VOY A PONER EN EL REPORTE →</button></div>`,
   );
   button("enter", resume);
 }
@@ -272,19 +276,24 @@ function statistics(back) {
 }
 function credits() {
   panel(
-    `<div class="eyebrow">FRACTION SLAYER / V0.1</div><h2>CRÉDITOS</h2><p>Diseño y concepto<br><b>Esteban Montaño</b></p><p>Proyecto académico<br><b>Universidad Tecnológica de Ciudad Juárez</b></p><p>Tema: Sistema inglés · Fraccional ↔ Decimal</p><p>Gráficos procedurales y sonidos sintetizados originales.<br>Espacio reservado para futuras atribuciones de assets.</p><p>“La matemática no te impide jugar. Te permite jugar mejor.”</p><button id="back">VOLVER</button>`,
+    `<div class="eyebrow">FRACTION SLAYER / V0.1.1</div><h2>CRÉDITOS</h2><p>Diseño y concepto<br><b>Esteban Montaño</b></p><p>Proyecto académico<br><b>Universidad Tecnológica de Ciudad Juárez</b></p><p>Tema: Sistema inglés · Fraccional ↔ Decimal</p><p>Gráficos procedurales y sonidos sintetizados originales.<br>Espacio reservado para futuras atribuciones de assets.</p><p>“La matemática no te impide jugar. Te permite jugar mejor.”</p><button id="back">VOLVER</button>`,
   );
   button("back", mainMenu);
 }
 function settings(back) {
   panel(
-    `<div class="eyebrow">DDI // AJUSTES DE OPERADOR</div><h2>CONFIGURACIÓN</h2><div class="settings"><label>Sensibilidad <input id="sensitivity" type="range" min="0.4" max="2" step="0.1" value="${FS.settings.sensitivity}"></label><label>Sonido <input type="checkbox" id="sound" ${FS.settings.sound ? "checked" : ""}></label><label>Minimapa de orientación <input type="checkbox" id="minimap" ${FS.settings.minimap ? "checked" : ""}></label><label>Resolución reducida <input type="checkbox" id="quality" ${FS.settings.quality === "low" ? "checked" : ""}></label></div><div class="row"><button id="export" ${slot ? "" : "disabled"}>EXPORTAR JSON</button><button id="import">IMPORTAR JSON</button><input id="file" class="hidden" type="file" accept=".json,application/json"></div><p>Un slot por navegador. Exporta una copia para cambiar de dispositivo.</p><div class="row"><button id="back" class="primary">GUARDAR Y VOLVER</button></div>`,
+    `<div class="eyebrow">DDI // AJUSTES DE OPERADOR</div><h2>CONFIGURACIÓN</h2><div class="settings"><fieldset><legend>Tamaño de controles</legend><div class="setting-options" id="control-sizes">${[['small','Pequeño'],['medium','Medio'],['large','Grande']].map(([v,l])=>`<button type="button" data-size="${v}" aria-pressed="${FS.settings.controlSize===v}">${l}</button>`).join('')}</div></fieldset><fieldset><legend>Zona de movimiento</legend><div class="setting-options" id="movement-zones">${[['half','Mitad izquierda'],['corner','Esquina izquierda']].map(([v,l])=>`<button type="button" data-zone="${v}" aria-pressed="${FS.settings.movementZone===v}">${l}</button>`).join('')}</div></fieldset><label for="joystick-radius">Radio máximo <span><input id="joystick-radius" type="range" min="40" max="85" step="5" value="${FS.settings.joystickRadius}"> <output id="radius-value">${FS.settings.joystickRadius}px</output></span></label><label for="vibration">Vibración suave <input id="vibration" type="checkbox" ${FS.settings.vibration?'checked':''}></label><label>Sensibilidad <input id="sensitivity" type="range" min="0.4" max="2" step="0.1" value="${FS.settings.sensitivity}"></label><label>Sonido <input type="checkbox" id="sound" ${FS.settings.sound ? "checked" : ""}></label><label>Minimapa de orientación <input type="checkbox" id="minimap" ${FS.settings.minimap ? "checked" : ""}></label><label>Resolución reducida <input type="checkbox" id="quality" ${FS.settings.quality === "low" ? "checked" : ""}></label></div><div class="row"><button id="export" ${slot ? "" : "disabled"}>EXPORTAR JSON</button><button id="import">IMPORTAR JSON</button><input id="file" class="hidden" type="file" accept=".json,application/json"></div><p>Un slot por navegador. Exporta una copia para cambiar de dispositivo.</p><div class="row"><button id="back" class="primary">GUARDAR Y VOLVER</button></div>`,
   );
+  let controlSize = FS.settings.controlSize, movementZone = FS.settings.movementZone;
+  document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{controlSize=b.dataset.size;document.querySelectorAll('[data-size]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
+  document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>{movementZone=b.dataset.zone;document.querySelectorAll('[data-zone]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
+  $('#joystick-radius').oninput=e=>$('#radius-value').textContent=e.target.value+'px';
   button("export", exportSave);
   button("import", () => $("#file").click());
   $("#file").onchange = importSave;
   button("back", () => {
     FS.settings = {
+      ...FS.settings, controlSize, movementZone, joystickRadius: Number($("#joystick-radius").value), vibration: $("#vibration").checked,
       sensitivity: Number($("#sensitivity").value),
       sound: $("#sound").checked,
       minimap: $("#minimap").checked,
@@ -296,6 +305,7 @@ function settings(back) {
         JSON.stringify(FS.settings),
       );
     } catch {}
+    window.InputControls?.layout();
     Render.resize();
     back();
   });

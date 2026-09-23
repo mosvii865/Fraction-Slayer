@@ -133,7 +133,7 @@ const Render = (() => {
       window.FS?.settings.quality === "low" ? 480 : 720,
       Math.round(r.width),
     );
-    const hud = r.height < 500 ? 70 : 78;
+    const hud = document.querySelector("#hud").getBoundingClientRect().height || (r.height < 500 ? 70 : 78);
     H = Math.max(160, Math.round(((r.height - hud) * W) / r.width));
     canvas.width = W;
     canvas.height = H + Math.round((hud * W) / r.width);

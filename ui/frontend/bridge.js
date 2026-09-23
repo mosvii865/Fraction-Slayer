@@ -8,12 +8,12 @@ const Bridge = (() => {
   const height = () => {
     let h;
     try {
-      h = window.parent.innerHeight;
+      h = window.parent.visualViewport?.height || window.parent.innerHeight;
     } catch {
-      h = screen.height;
+      h = window.visualViewport?.height || window.innerHeight;
     }
     post("streamlit:setFrameHeight", {
-      height: Math.max(300, h || window.innerHeight),
+      height: Math.max(240, h || window.innerHeight),
     });
   };
   function transmit() {
@@ -43,6 +43,11 @@ const Bridge = (() => {
   });
   document.querySelector("#retry").onclick = transmit;
   window.addEventListener("resize", height);
+  window.addEventListener("orientationchange", height);
+  try {
+    window.parent.addEventListener("resize", height);
+    window.parent.visualViewport?.addEventListener("resize", height);
+  } catch {}
   post("streamlit:componentReady", { apiVersion: 1 });
   height();
   return {

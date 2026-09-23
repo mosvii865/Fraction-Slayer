@@ -739,3 +739,56 @@ input[type="checkbox"] {
     opacity: 0.6;
   }
 }
+/* v0.1.1: scoped gesture handling and safe-area-aware touch layout. */
+:root {
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --hud-base: 78px;
+}
+@media(max-height:500px){:root{--hud-base:70px}}
+#app {min-height:0}
+#app.is-playing {touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
+#overlay {touch-action:pan-y pinch-zoom;user-select:text;-webkit-user-select:text;overscroll-behavior:contain;align-items:safe center;padding: max(12px,var(--safe-top)) max(20px,var(--safe-right)) max(12px,var(--safe-bottom)) max(20px,var(--safe-left))}
+#controls {top:calc(42px + var(--safe-top));bottom:calc(var(--hud-base) + var(--safe-bottom));left:var(--safe-left);right:var(--safe-right)}
+#topbar {height:calc(42px + var(--safe-top));padding-top:var(--safe-top);padding-left:calc(12px + var(--safe-left));padding-right:calc(12px + var(--safe-right))}
+#hud {height:calc(var(--hud-base) + var(--safe-bottom));padding:5px calc(12px + var(--safe-right)) calc(5px + var(--safe-bottom)) calc(12px + var(--safe-left))}
+#crosshair {top:calc((100% - var(--hud-base) - var(--safe-bottom))/2)}
+#hint {bottom:calc(var(--hud-base) + var(--safe-bottom) + 10px)}
+#toast {top:calc(55px + var(--safe-top))}
+#rotate,#connection {padding: max(24px,var(--safe-top)) max(24px,var(--safe-right)) max(24px,var(--safe-bottom)) max(24px,var(--safe-left))}
+#move-zone,#weapon-toggle,#reload-touch {display:none}
+#look {inset:0 0 0 50%}
+#pad {display:none;pointer-events:none}
+#mobile-actions {pointer-events:none}
+#weapon-picker {position:absolute;z-index:9;right:20px;bottom:110px;width:160px;display:grid;gap:8px;pointer-events:auto;padding:8px;background:#081922ef;border:1px solid var(--cyan);box-shadow:0 5px 20px #0008}
+#weapon-picker button {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:62px;padding:8px 4px;touch-action:none;font-size:12px;letter-spacing:0}
+#weapon-picker button[aria-pressed=true]{border-color:var(--amber);background:#453e29}
+#weapon-picker .weapon-ammo{font-size:10px;font-weight:normal}
+#weapon-picker #weapon-close{min-height:44px;font-size:11px}
+.touch-controls #move-zone {display:block;position:absolute;inset:0 50% 0 0;pointer-events:auto;touch-action:none}
+.touch-controls[data-movement-zone=corner] #move-zone{top:40%;right:55%}
+.touch-controls #pad {display:block;position:absolute;left:0;top:0;bottom:auto;width:var(--joystick-size,120px);height:var(--joystick-size,120px);transform:translate(-50%,-50%);border:2px solid #c0e4e270;background:#0c233755;opacity:0;transition:opacity .12s;z-index:1;pointer-events:none}
+.touch-controls #pad.active{opacity:1}
+.touch-controls #stick {top:calc(50% - var(--stick-size,50px)/2);left:calc(50% - var(--stick-size,50px)/2);width:var(--stick-size,50px);height:var(--stick-size,50px);background:#aacdd550;border:2px solid #def5f296;will-change:transform}
+.touch-controls #mobile-actions {position:absolute;z-index:2;right:14px;bottom:12px;display:grid;grid-template-columns:var(--aux-size,82px) var(--fire-size,116px);grid-template-rows:var(--aux-size,82px) var(--fire-size,116px);gap:var(--control-gap,14px);align-items:center;justify-items:center}
+.touch-controls #mobile-actions button {position:static;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:auto;touch-action:none;border:2px solid #96cdd57a;border-radius:22px;background:#102635b8;width:var(--aux-size,82px);height:var(--aux-size,82px);min-height:0;padding:4px;font-size:28px;opacity:1;color:#e3eae4;letter-spacing:0}
+.touch-controls #mobile-actions button span{font-size:11px;letter-spacing:.5px;margin-top:5px}
+.touch-controls #mobile-actions #fire {width:var(--fire-size,116px);height:var(--fire-size,116px);border-radius:50%;background:#392619b0;border-color:#e9b657b5;font-size:36px}
+.touch-controls #mobile-actions button:active{background:#45616ccc}
+.touch-controls #mobile-actions #fire:active{background:#a1753dc7}
+.touch-controls #weapon-picker {right:calc(14px + var(--aux-size,82px) + var(--fire-size,116px) + var(--control-gap,14px) + 10px);bottom:12px;width:var(--picker-width,120px);padding:6px;gap:6px}
+.touch-controls #weapon-picker button{min-height:var(--picker-height,82px);font-size:11px}
+.touch-controls #weapon-picker #weapon-close{min-height:44px}
+.touch-controls #reload {font-size:9px;min-height:20px;pointer-events:none} /* Large mobile duplicate is at the right thumb. */
+.settings fieldset {border:1px solid var(--line);padding:10px;margin:12px 0}
+.settings legend{font-size:12px;color:var(--amber);padding:0 6px}
+.setting-options {display:flex;gap:8px}
+.setting-options button {flex:1;min-height:48px;padding:8px;font-size:12px;letter-spacing:0}
+.setting-options button[aria-pressed=true] {background:#54442a;border-color:var(--amber)}
+.settings label>span {display:flex;gap:8px;align-items:center;justify-content:flex-end}
+.settings input[type=checkbox]{width:24px;height:24px}
+.settings input[type=range]{min-height:36px}
+
+@media(orientation:portrait){.touch-controls #rotate{display:flex}}

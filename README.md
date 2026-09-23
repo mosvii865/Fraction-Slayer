@@ -1,10 +1,29 @@
-# Fraction Slayer — v0.1
+# Fraction Slayer — v0.1.1
 
 FPS retro educativo original, con Python + Streamlit y renderizado Canvas por raycasting. Diseñado para jugar desde el navegador en celular horizontal y PC.
 
 **Diseño y concepto:** Esteban Montaño. **Proyecto académico:** Universidad Tecnológica de Ciudad Juárez.
 
 > La matemática no te impide jugar. Te permite jugar mejor.
+
+## Actualización v0.1.1 — controles móviles
+
+Esta versión parte de la v0.1 y conserva sus reglas, contenido y formato de guardado. No requiere nuevas dependencias. Para actualizar una instalación existente, sustituye los archivos del proyecto y vuelve a ejecutar Streamlit. Conserva el mismo dominio para mantener el slot local; exportar JSON sigue disponible.
+
+- **Joystick flotante:** toca la mitad izquierda del área jugable y arrastra. El origen coincide con el primer contacto y no se desplaza mientras mantengas ese dedo. Al soltar, el movimiento se detiene y el círculo se desvanece. Dirección continua, incluidas las ocho direcciones y diagonales, con magnitud analógica; la velocidad máxima original no cambia.
+- **Multitouch:** cada `pointerId` tiene un propietario. Movimiento, cámara, disparo y botones no se sobrescriben entre sí. Un segundo toque sobre la zona de movimiento no roba el joystick. Cancelar o soltar un botón solo libera su propio contacto.
+- **Selector compacto:** toca **ARMAS** junto al pulgar derecho, o el arma del HUD, y elige PISTOLA/ESCOPETA. Se cierra al elegir y no pausa movimiento, cámara ni disparo. También muestra munición y disponibilidad. No es necesario soltar el joystick.
+- **Botones grandes:** DISPARAR, USAR, RECARGAR y ARMAS están separados en el lado derecho. La recarga móvil tiene un botón grande propio; se conserva la barra general del HUD.
+- **Preferencias:** Configuración → Pequeño / **Medio** / Grande, zona **Mitad izquierda** / Esquina izquierda, radio máximo del joystick (40–85 px base; 60 predeterminado) y Vibración Sí/No. Se conservan en la misma clave local de configuración. El tamaño también escala el joystick y el selector. En pantallas cortas, los controles se reducen lo necesario para caber sin solaparse.
+- **Zona muerta:** 16% del radio efectivo, con mínimo de 7 px. Fuera de ella, la intensidad crece hasta el radio máximo y se limita a uno; alejar más el dedo no aumenta la velocidad. El radio efectivo combina la preferencia, el tamaño de controles y el espacio disponible.
+- **Márgenes seguros:** se consideran los cuatro `safe-area-inset`, el viewport visible y los cambios de orientación. Los toques no desplazan ni amplían la vista durante gameplay; los paneles conservan desplazamiento y zoom. Al rotar o cambiar el tamaño se liberan los contactos para evitar movimiento atascado. En vertical se pausa y aparece ROTATE DEVICE; vuelve a horizontal, pulsa CONTINUAR y vuelve a tocar el joystick.
+- **Vibración opcional:** desactivada inicialmente. Pulsos solicitados de 6 ms al disparar, 14 ms al recibir daño y 8 ms al cambiar arma, limitados para evitar acumulación. Si el navegador no admite o no permite vibración, se omite sin errores.
+
+El selector de armas no pausa el juego. **Interactuar con una estación que abre un holograma conserva la pausa educativa de v0.1**; pulsar USAR sin abrir un panel no cancela el joystick. Pausa, muerte, pérdida de foco y aviso de desconexión siguen liberando todos los controles por seguridad.
+
+En PC se mantienen WASD, clic izquierdo, E, R y 1/2. Si el iframe impide capturar el ratón, puedes girar arrastrando con el botón derecho; las flechas también funcionan. No se modifican los permisos del iframe.
+
+Consulta `CHANGELOG.md`, `VALIDACION.md` y `CAMBIOS_V0.1.1.md` para el alcance, pruebas y lista exacta de archivos.
 
 ## Arranque rápido
 
@@ -73,12 +92,12 @@ Abre `http://IP_LOCAL_DE_TU_PC:8501` en el teléfono. Permite el puerto en el fi
 
 | Acción | Móvil horizontal | PC |
 |---|---|---|
-| Moverse | Pad izquierdo, 8 direcciones | WASD |
-| Girar | Arrastrar zona derecha | Clic en la vista para capturar mouse; también ← / → |
+| Moverse | Joystick flotante izquierdo, analógico | WASD |
+| Girar | Arrastrar zona derecha sin botones | Mouse capturado si se permite; arrastre con botón derecho o ← / → |
 | Disparar | Mantener DISPARAR | Clic izquierdo; Espacio como alternativa |
 | Interactuar | USAR, cerca de estación | E |
-| Cambiar arma | Tocar el arma en HUD | 1 pistola / 2 escopeta |
-| Recargar | RECARGAR bajo el cargador | R |
+| Cambiar arma | ARMAS → selector compacto, sin soltar el joystick | 1 pistola / 2 escopeta |
+| Recargar | Botón grande RECARGAR a la derecha | R |
 | Pausar | Ⅱ, esquina superior | Esc o botón Ⅱ |
 | Pantalla completa | ⛶ si el navegador lo admite | ⛶ |
 
@@ -165,7 +184,7 @@ Opción con Git, desde la carpeta del proyecto:
 ```bash
 git init
 git add .
-git commit -m "Fraction Slayer v0.1: prototipo jugable"
+git commit -m "Fraction Slayer v0.1.1: controles móviles"
 git branch -M main
 git remote add origin https://github.com/TU_USUARIO/fraction-slayer.git
 git push -u origin main
@@ -203,6 +222,8 @@ Integración visual opcional:
 python -m pip install -r requirements-dev.txt
 python -m playwright install chromium --only-shell
 python tests/browser_smoke.py
+python tests/mobile_controls.py
+python tests/pc_controls.py
 ```
 
 En Linux sin bibliotecas de navegador, Playwright puede requerir `python -m playwright install-deps chromium`. Esto solo es para el entorno de desarrollo/pruebas, no para Streamlit Cloud.
