@@ -1,15 +1,18 @@
-from .armas import weapon_config
+from .armas import weapon_config, WEAPONS
 
 MODS = {"pistol": "Precision Barrel", "shotgun": "Tight Choke"}
 
 
-def apply_upgrade(state, weapon):
-    if state["progress"]["mad_used"]:
-        raise ValueError("Este M.A.D. ya fue utilizado")
-    if weapon not in state["weapons"]:
-        raise ValueError("Arma no disponible")
-    if state["weapons"][weapon]["mods"] >= 1:
-        raise ValueError("MOD II estará disponible en otra versión")
-    state["weapons"][weapon]["mods"] += 1
-    state["progress"]["mad_used"] = True
-    return weapon_config(weapon, state["weapons"][weapon]["mods"])
+def eligible_weapons(state, mod=1):
+    return [
+        w
+        for w, a in state["weapons"].items()
+        if w in MODS and a["mods"] == mod - 1 and mod <= 1
+    ]
+
+
+def apply_upgrade(state, weapon, mod=1):
+    if weapon not in WEAPONS or weapon not in eligible_weapons(state, mod):
+        raise ValueError("No hay mejora válida para esta arma")
+    state["weapons"][weapon]["mods"] = mod
+    return weapon_config(weapon, mod)

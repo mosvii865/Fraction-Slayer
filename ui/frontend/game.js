@@ -5,17 +5,35 @@ const esc = (s) =>
   String(s).replace(
     /[&<>"']/g,
     (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
+    ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[
+      c
+    ],
   );
 const FS = (window.FS = {
   state: null,
   config: null,
   playing: false,
-  settings: { sensitivity: 1, sound: true, minimap: true, quality: "normal", controlSize: "medium", movementZone: "half", joystickRadius: 60, vibration: false },
+  settings: {
+    sensitivity: 1,
+    sound: true,
+    minimap: true,
+    quality: "normal",
+    controlSize: "medium",
+    movementZone: "half",
+    joystickRadius: 60,
+    vibration: false
+  },
   keys: {},
-  move: { x: 0, y: 0 },
+  move: {
+    x: 0,
+    y: 0
+  },
   moving: 0,
   projectiles: [],
   shotFlash: 0,
@@ -45,6 +63,7 @@ try {
     JSON.parse(localStorage.getItem("fraction-slayer-settings") || "{}"),
   );
 } catch {}
+
 function store(reply) {
   if (reply.save) {
     slot = reply.save;
@@ -61,25 +80,33 @@ function store(reply) {
     } catch {}
   }
 }
+
 function toast(text) {
   $("#toast").textContent = text;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => ($("#toast").textContent = ""), 3400);
 }
+
 function sound(kind) {
   if (!FS.settings.sound) return;
   try {
-    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    audio = audio || new(window.AudioContext || window.webkitAudioContext)();
     audio.resume();
     const o = audio.createOscillator(),
       g = audio.createGain();
     o.connect(g);
     g.connect(audio.destination);
     o.type = kind === "shot" ? "sawtooth" : "sine";
-    const freq =
-      { shot: 110, hurt: 70, pickup: 650, good: 880, bad: 130, reload: 220 }[
-        kind
-      ] || 300;
+    const freq = {
+      shot: 110,
+      hurt: 70,
+      pickup: 650,
+      good: 880,
+      bad: 130,
+      reload: 220
+    } [
+      kind
+    ] || 300;
     o.frequency.setValueAtTime(freq, audio.currentTime);
     o.frequency.exponentialRampToValueAtTime(
       freq * 0.35,
@@ -91,32 +118,44 @@ function sound(kind) {
     o.stop(audio.currentTime + 0.2);
   } catch {}
 }
+
 function expression(type) {
   FS.faceExpression = type;
   FS.faceUntil = performance.now() / 1000 + 1.3;
 }
+
 function lockMouse() {
   try {
     const p = $("#world").requestPointerLock?.();
-    p?.catch(() => { FS.mouseLockDenied = true; toast("Mouse libre: arrastra con botón derecho para girar; clic izquierdo dispara."); });
+    p?.catch(() => {
+      FS.mouseLockDenied = true;
+      toast("Mouse libre: arrastra con botón derecho para girar; clic izquierdo dispara.");
+    });
   } catch {
-    FS.mouseLockDenied = true; toast("Arrastra con botón derecho o usa ← → para girar.");
+    FS.mouseLockDenied = true;
+    toast("Arrastra con botón derecho o usa ← → para girar.");
   }
 }
+
 function releaseInput() {
   window.InputControls?.reset();
   FS.keys = {};
-  FS.move = { x: 0, y: 0 };
+  FS.move = {
+    x: 0,
+    y: 0
+  };
   FS.fireHeld = false;
   $("#stick").style.transform = "";
 }
 FS.releaseInput = releaseInput;
+
 function freeze() {
   FS.playing = false;
   $("#app").classList.remove("is-playing");
   releaseInput();
   if (document.pointerLockElement) document.exitPointerLock();
 }
+
 function overlay(html) {
   if (html) {
     clearTimeout(toastTimer);
@@ -124,43 +163,110 @@ function overlay(html) {
   }
   $("#overlay").innerHTML = html;
 }
+
 function uiGameplay(show) {
   for (const id of ["topbar", "hud", "controls", "crosshair"])
     $("#" + id).classList.toggle("hidden", !show);
   if (!show) $("#hint").textContent = "";
 }
+
 function panel(content, cls = "") {
   overlay(`<section class="panel ${cls}">${content}</section>`);
 }
+
 function button(id, fn) {
   $("#" + id)?.addEventListener("click", fn);
 }
-async function rpc(action, data = {}, snapshot = true) {
+
+function sessionFailure(message) {
+  FS.sessionUnavailable = true;
+  modalQuestion = null;
+  mainMenu();
+  toast(message);
+}
+async function rpc(action, data = {}, snapshot = true, captured = null) {
   if (Bridge.busy) {
-    toast("Sincronizando con Python…");
+    toast('Sincronizando con Python…');
     return null;
   }
+  const baseline = snapshot && FS.state ? (captured || clone(FS.state)) : null;
   try {
-    const reply = await Bridge.request(action, {
+    let reply = await Bridge.request(action, {
       ...data,
-      ...(snapshot && FS.state ? { snapshot: clone(FS.state) } : {}),
+      ...(baseline ? {
+        snapshot: baseline
+      } : {})
     });
+    if (reply.code === 'NEED_SESSION') {
+      FS.recovering = true;
+      if (!slot) {
+        sessionFailure('Sesión perdida. Inicia una partida o importa tu guardado.');
+        return null;
+      }
+      const loaded = await Bridge.request('load', {
+        save: slot
+      });
+      if (loaded.error) {
+        sessionFailure(loaded.error);
+        return null;
+      }
+      const syncBaseline = baseline || clone(FS.state);
+      const synced = await Bridge.request('sync', {
+        snapshot: syncBaseline
+      });
+      if (synced.error) {
+        sessionFailure(synced.error);
+        return null;
+      }
+      store(synced);
+      FS.sessionUnavailable = false;
+      toast('Sesión restaurada');
+      if (action === 'answer' || action === 'question') mergeWorld(synced, syncBaseline);
+      if (action === 'answer') {
+        const renewed = await Bridge.request('question', {
+          station: currentStation,
+          weapon: currentWeapon
+        });
+        if (renewed.error) {
+          modalQuestion = null;
+          resume();
+          toast(renewed.error);
+          return {
+            cancelled: true
+          };
+        }
+        return {
+          ...renewed,
+          renewed: true
+        };
+      }
+      // Already synchronized: replay the command without overwriting newly granted resources.
+      reply = action === 'sync' ? synced : await Bridge.request(action, data);
+    }
     if (reply.error) {
       toast(reply.error);
       return null;
     }
     store(reply);
     return reply;
-  } catch (e) {
-    toast(e.message);
+  } catch (error) {
+    if (FS.recovering) sessionFailure('No se pudo restaurar la sesión. ' + error.message);
+    else toast(error.message);
     return null;
+  } finally {
+    FS.recovering = false;
   }
 }
+
 function applyStart(r) {
   if (!r) return;
+  FS.sessionUnavailable = false;
   FS.state = r.state;
   FS.config = r.config;
   FS.projectiles = [];
+  FS.checkpointAttempts = {};
+  FS.worldDirty = false;
+  FS.engineFault = false;
   FS.reloading = 0;
   FS.cooldown = 0;
   FS.hurtFlash = 0;
@@ -171,7 +277,9 @@ function applyStart(r) {
     `Bienvenido, ${FS.state.name}. Esto no estaba en el convenio de estadías.`,
   );
 }
+
 function resume() {
+  if (!FS.state || FS.sessionUnavailable) return mainMenu();
   overlay("");
   uiGameplay(true);
   if (FS.state.player.hp <= 0) {
@@ -189,21 +297,25 @@ function resume() {
   Render.resize();
   updateHUD();
 }
+
 function mainMenu() {
   freeze();
   uiGameplay(false);
   overlay(
-    `<main class="menu"><div class="hero"><div class="eyebrow">DDI / QUALITY CONTROL DIVISION</div><h1>FRACTION<br><em>SLAYER</em></h1><span class="badge">ESTADÍAS PROFESIONALES • V0.1.1</span><p>Primer día. Una fábrica fuera de control.<br>Y una máquina que no sabe redondear.</p><p>La matemática no te impide jugar.<br>Te permite jugar mejor.</p></div><nav class="nav"><button class="primary" id="new">NUEVA PARTIDA <small>01</small></button><button id="continue" ${slot ? "" : "disabled"}>CONTINUAR <small>02</small></button><button id="stats">ESTADÍSTICAS <small>03</small></button><button id="settings">CONFIGURACIÓN <small>04</small></button><button id="credits">CRÉDITOS <small>05</small></button><div class="footer">SISTEMA INGLÉS / FRACCIONAL ↔ DECIMAL<br>ORIGINAL PROTOTYPE · SIN TURNO DE SALIDA</div></nav></main>`,
+    `<main class="menu"><div class="hero"><div class="eyebrow">DDI / QUALITY CONTROL DIVISION</div><h1>FRACTION<br><em>SLAYER</em></h1><span class="badge">ESTADÍAS PROFESIONALES • V0.2-ALPHA1</span><p>Primer día. Una fábrica fuera de control.<br>Y una máquina que no sabe redondear.</p><p>La matemática no te impide jugar.<br>Te permite jugar mejor.</p></div><nav class="nav"><button class="primary" id="new">NUEVA PARTIDA <small>01</small></button><button id="continue" ${slot ? "" : "disabled"}>CONTINUAR <small>02</small></button><button id="stats">ESTADÍSTICAS <small>03</small></button><button id="settings">CONFIGURACIÓN <small>04</small></button><button id="credits">CRÉDITOS <small>05</small></button><div class="footer">SISTEMA INGLÉS / FRACCIONAL ↔ DECIMAL<br>ORIGINAL PROTOTYPE · SIN TURNO DE SALIDA</div></nav></main>`,
   );
   button("new", newGame);
   button("continue", async () => {
-    const r = await rpc("load", { save: slot }, false);
+    const r = await rpc("load", {
+      save: slot
+    }, false);
     applyStart(r);
   });
   button("stats", () => statistics(mainMenu));
   button("settings", () => settings(mainMenu));
   button("credits", credits);
 }
+
 function newGame() {
   panel(
     `<div class="eyebrow">UTCJ / DDI</div><h2>ESTADÍAS PROFESIONALES</h2><label for="name">NOMBRE DEL PRACTICANTE</label><input id="name" maxlength="24" autocomplete="given-name" placeholder="Tu nombre"><p>ÁREA ASIGNADA: <b>QUALITY CONTROL</b></p><div class="row"><button id="back" class="quiet">VOLVER</button><button id="next" class="primary">ASIGNAR TURNO →</button></div><p>Una nueva partida reemplaza el slot al comenzar. Puedes exportarlo desde Configuración.</p>`,
@@ -214,6 +326,7 @@ function newGame() {
     if (e.key === "Enter") $("#next").click();
   });
 }
+
 function difficulty(name) {
   let diff = "clasico";
   panel(
@@ -232,13 +345,17 @@ function difficulty(name) {
   button("back", newGame);
   button("start", async () => {
     $("#start").disabled = true;
-    const r = await rpc("new", { name, difficulty: diff }, false);
+    const r = await rpc("new", {
+      name,
+      difficulty: diff
+    }, false);
     if (r) {
       applyStart(r);
       intro();
     } else if ($("#start")) $("#start").disabled = false;
   });
 }
+
 function intro() {
   freeze();
   panel(
@@ -246,6 +363,7 @@ function intro() {
   );
   button("enter", resume);
 }
+
 function statHTML(s) {
   s = s || {
     kills: 0,
@@ -263,37 +381,52 @@ function statHTML(s) {
     ["SCORE", s.score || 0],
     ["MEJOR RACHA", s.best_streak || 0],
   ];
-  return `<div class="stats">${vals.map(([label, v]) => `<div class="stat"><small>${label}</small><b>${v}</b></div>`).join("")}</div><p>Secretos: ${s.secrets || 0} · Daño recibido: ${Math.round(s.damage || 0)} · Munición usada: ${s.ammo_used || 0}</p>`;
+  return `<div class="stats">${vals.map(([label, v]) => `<div class="stat"><small>${label}</small><b>${v}</b></div>`).join("")}</div><p>Secretos: ${s.secrets || 0} · UTCJ: ${s.utcj_display || "???"} · Daño recibido: ${Math.round(s.damage || 0)} · Munición usada: ${s.ammo_used || 0}</p>`;
 }
+
 function formatTime(n) {
   return `${Math.floor(n / 60)}:${String(Math.floor(n % 60)).padStart(2, "0")}`;
 }
+
 function statistics(back) {
   panel(
     `<div class="eyebrow">EXPEDIENTE // ÚLTIMO REGISTRO</div><h2>ESTADÍSTICAS</h2>${statHTML(lastStats)}<div class="row"><button id="back">VOLVER</button></div>`,
   );
   button("back", back);
 }
+
 function credits() {
   panel(
-    `<div class="eyebrow">FRACTION SLAYER / V0.1.1</div><h2>CRÉDITOS</h2><p>Diseño y concepto<br><b>Esteban Montaño</b></p><p>Proyecto académico<br><b>Universidad Tecnológica de Ciudad Juárez</b></p><p>Tema: Sistema inglés · Fraccional ↔ Decimal</p><p>Gráficos procedurales y sonidos sintetizados originales.<br>Espacio reservado para futuras atribuciones de assets.</p><p>“La matemática no te impide jugar. Te permite jugar mejor.”</p><button id="back">VOLVER</button>`,
+    `<div class="eyebrow">FRACTION SLAYER / V0.2-ALPHA1</div><h2>CRÉDITOS</h2><p>Diseño y concepto<br><b>Esteban Montaño</b></p><p>Proyecto académico<br><b>Universidad Tecnológica de Ciudad Juárez</b></p><p>Tema: Sistema inglés · Fraccional ↔ Decimal</p><p>Gráficos procedurales y sonidos sintetizados originales.<br>Espacio reservado para futuras atribuciones de assets.</p><p>“La matemática no te impide jugar. Te permite jugar mejor.”</p><button id="back">VOLVER</button>`,
   );
   button("back", mainMenu);
 }
+
 function settings(back) {
   panel(
     `<div class="eyebrow">DDI // AJUSTES DE OPERADOR</div><h2>CONFIGURACIÓN</h2><div class="settings"><fieldset><legend>Tamaño de controles</legend><div class="setting-options" id="control-sizes">${[['small','Pequeño'],['medium','Medio'],['large','Grande']].map(([v,l])=>`<button type="button" data-size="${v}" aria-pressed="${FS.settings.controlSize===v}">${l}</button>`).join('')}</div></fieldset><fieldset><legend>Zona de movimiento</legend><div class="setting-options" id="movement-zones">${[['half','Mitad izquierda'],['corner','Esquina izquierda']].map(([v,l])=>`<button type="button" data-zone="${v}" aria-pressed="${FS.settings.movementZone===v}">${l}</button>`).join('')}</div></fieldset><label for="joystick-radius">Radio máximo <span><input id="joystick-radius" type="range" min="40" max="85" step="5" value="${FS.settings.joystickRadius}"> <output id="radius-value">${FS.settings.joystickRadius}px</output></span></label><label for="vibration">Vibración suave <input id="vibration" type="checkbox" ${FS.settings.vibration?'checked':''}></label><label>Sensibilidad <input id="sensitivity" type="range" min="0.4" max="2" step="0.1" value="${FS.settings.sensitivity}"></label><label>Sonido <input type="checkbox" id="sound" ${FS.settings.sound ? "checked" : ""}></label><label>Minimapa de orientación <input type="checkbox" id="minimap" ${FS.settings.minimap ? "checked" : ""}></label><label>Resolución reducida <input type="checkbox" id="quality" ${FS.settings.quality === "low" ? "checked" : ""}></label></div><div class="row"><button id="export" ${slot ? "" : "disabled"}>EXPORTAR JSON</button><button id="import">IMPORTAR JSON</button><input id="file" class="hidden" type="file" accept=".json,application/json"></div><p>Un slot por navegador. Exporta una copia para cambiar de dispositivo.</p><div class="row"><button id="back" class="primary">GUARDAR Y VOLVER</button></div>`,
   );
-  let controlSize = FS.settings.controlSize, movementZone = FS.settings.movementZone;
-  document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{controlSize=b.dataset.size;document.querySelectorAll('[data-size]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
-  document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>{movementZone=b.dataset.zone;document.querySelectorAll('[data-zone]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
-  $('#joystick-radius').oninput=e=>$('#radius-value').textContent=e.target.value+'px';
+  let controlSize = FS.settings.controlSize,
+    movementZone = FS.settings.movementZone;
+  document.querySelectorAll('[data-size]').forEach(b => b.onclick = () => {
+    controlSize = b.dataset.size;
+    document.querySelectorAll('[data-size]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  });
+  document.querySelectorAll('[data-zone]').forEach(b => b.onclick = () => {
+    movementZone = b.dataset.zone;
+    document.querySelectorAll('[data-zone]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  });
+  $('#joystick-radius').oninput = e => $('#radius-value').textContent = e.target.value + 'px';
   button("export", exportSave);
   button("import", () => $("#file").click());
   $("#file").onchange = importSave;
   button("back", () => {
     FS.settings = {
-      ...FS.settings, controlSize, movementZone, joystickRadius: Number($("#joystick-radius").value), vibration: $("#vibration").checked,
+      ...FS.settings,
+      controlSize,
+      movementZone,
+      joystickRadius: Number($("#joystick-radius").value),
+      vibration: $("#vibration").checked,
       sensitivity: Number($("#sensitivity").value),
       sound: $("#sound").checked,
       minimap: $("#minimap").checked,
@@ -310,11 +443,14 @@ function settings(back) {
     back();
   });
 }
+
 function exportSave() {
   if (!slot) return;
   const a = document.createElement("a"),
     url = URL.createObjectURL(
-      new Blob([JSON.stringify(slot, null, 2)], { type: "application/json" }),
+      new Blob([JSON.stringify(slot, null, 2)], {
+        type: "application/json"
+      }),
     );
   a.href = url;
   a.download = "fraction-slayer-save.json";
@@ -324,13 +460,15 @@ function exportSave() {
 async function importSave(e) {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > 100000) {
+  if (file.size > 500000) {
     toast("Archivo demasiado grande");
     return;
   }
   try {
     const save = JSON.parse(await file.text());
-    const r = await rpc("load", { save }, false);
+    const r = await rpc("load", {
+      save
+    }, false);
     if (r) {
       applyStart(r);
       pauseMenu(false);
@@ -341,7 +479,12 @@ async function importSave(e) {
 }
 async function pauseMenu(sync = true) {
   freeze();
-  if (sync && !Bridge.busy) await rpc("pause");
+  if (sync && !Bridge.busy) {
+    const before = clone(FS.state);
+    const r = await rpc('pause', {}, true, before);
+    mergeWorld(r, before);
+  }
+  if (FS.sessionUnavailable) return;
   panel(
     `<div class="eyebrow">TURNO SUSPENDIDO // ${esc(FS.state?.name || "")}</div><h2>PAUSA</h2><div class="nav"><button id="resume" class="primary">CONTINUAR</button><button id="settings">CONFIGURACIÓN / GUARDADO</button><button id="stats">ESTADÍSTICAS</button><button id="restart">REINICIAR CHECKPOINT</button><button id="menu">SALIR AL MENÚ</button></div>`,
   );
@@ -351,6 +494,7 @@ async function pauseMenu(sync = true) {
   button("restart", async () => applyStart(await rpc("restart", {}, false)));
   button("menu", mainMenu);
 }
+
 function death() {
   freeze();
   panel(
@@ -362,6 +506,7 @@ function death() {
     mainMenu();
   });
 }
+
 function mission(stats) {
   freeze();
   panel(
@@ -383,11 +528,20 @@ async function ask(station, weapon = "pistol") {
     '<div class="eyebrow">ENLACE QC</div><h2>CALIBRANDO…</h2><p>Conectando con el módulo de cálculo.</p>',
     "hologram",
   );
-  const r = await rpc("question", { station, weapon });
+  const r = await rpc("question", {
+    station,
+    weapon
+  });
   if (r) showQuestion(r.question, station);
-  else resume();
+  else {
+    const message = $("#toast").textContent;
+    resume();
+    toast(message);
+  }
 }
+
 function showQuestion(q, station) {
+  station = stationKind(station);
   modalQuestion = q;
   manual = "";
   const manualUI = q.mode === "manual";
@@ -399,7 +553,7 @@ function showQuestion(q, station) {
     .querySelectorAll("[data-choice]")
     .forEach(
       (b) =>
-        (b.onclick = () => submitAnswer(q.choices[Number(b.dataset.choice)])),
+      (b.onclick = () => submitAnswer(q.choices[Number(b.dataset.choice)])),
     );
   document
     .querySelectorAll("[data-key]")
@@ -410,6 +564,7 @@ function showQuestion(q, station) {
     resume();
   });
 }
+
 function keypad(k) {
   if (k === "⌫") manual = manual.slice(0, -1);
   else if (k === "C") manual = "";
@@ -427,37 +582,42 @@ async function submitAnswer(answer) {
   document
     .querySelectorAll("#overlay button")
     .forEach((b) => (b.disabled = true));
-  const r = await rpc("answer", { question_id: q.id, answer });
+  const r = await rpc("answer", {
+    question_id: q.id,
+    answer
+  });
+  if (r?.cancelled || FS.sessionUnavailable) return;
   if (!r) {
     showQuestion(q, currentStation);
+    return;
+  }
+  if (r.renewed) {
+    showQuestion(r.question, currentStation);
+    toast("Sesión restaurada. Resuelve esta nueva calibración.");
     return;
   }
   FS.state = r.state;
   FS.config = r.config;
   updateHUD();
   sound(r.correct ? "good" : "bad");
-  if (r.correct && currentStation === "mad") expression("upgrade");
+  if (r.correct && stationKind(currentStation) === "mad") expression("upgrade");
   panel(
-    `<div class="eyebrow">CALIBRATION HOLOGRAM</div><h2 class="${r.correct ? "success" : "error"}">${r.correct ? (currentStation === "door" ? "ACCESS GRANTED" : currentStation === "mad" ? "MOD I INSTALADO" : "CALIBRATION COMPLETE") : "CALIBRATION ERROR"}</h2><p>${esc(r.explanation)}</p>${r.correct ? `<p>${currentStation === "mad" ? esc(r.reward) + " · Ajuste dimensional aplicado." : currentStation === "terminal" ? "+12 municiones de pistola." : currentStation === "cache" ? "+35 vida · +24 municiones · Secreto encontrado." : "Acceso desbloqueado."}</p>` : "<p>Puedes volver a intentarlo con otra pregunta.</p>"}<div class="row">${!r.correct ? '<button id="again" class="primary">REINTENTAR</button>' : ""}<button id="return">VOLVER AL JUEGO</button></div>`,
-    "hologram " + (currentStation === "door" ? "door" : ""),
+    `<div class="eyebrow">CALIBRATION HOLOGRAM</div><h2 class="${r.correct ? "success" : "error"}">${r.correct ? (stationKind(currentStation) === "door" ? "ACCESS GRANTED" : stationKind(currentStation) === "mad" ? "MOD I INSTALADO" : "CALIBRATION COMPLETE") : "CALIBRATION ERROR"}</h2><p>${esc(r.explanation)}</p>${r.correct ? `<p>${stationKind(currentStation) === "mad" ? esc(r.reward) + " · Ajuste dimensional aplicado." : stationKind(currentStation) === "terminal" ? "+12 municiones de pistola." : stationKind(currentStation) === "cache" ? "+35 vida · +24 municiones · Secreto encontrado." : "Acceso desbloqueado."}</p>` : "<p>Puedes volver a intentarlo con otra pregunta.</p>"}<div class="row">${!r.correct ? '<button id="again" class="primary">REINTENTAR</button>' : ""}<button id="return">VOLVER AL JUEGO</button></div>`,
+    "hologram " + (stationKind(currentStation) === "door" ? "door" : ""),
   );
   button("again", () => ask(currentStation, currentWeapon));
   button("return", resume);
 }
+
 function interact() {
   if (!FS.playing || !FS.nearest) return;
   const st = FS.nearest.id;
-  const flags = {
-    terminal: "terminal_used",
-    mad: "mad_used",
-    door: "door_open",
-    cache: "cache_used",
-  };
-  if (st === "exit") {
-    if (FS.state.enemies.some((e) => e.hp > 0)) {
-      toast("Hay enemigos activos. Completa la inspección de la arena.");
-      return;
-    }
+  const kind = FS.nearest.kind;
+  if (kind !== 'exit' && !FS.nearest.allow_in_combat && areaUnsafe()) {
+    toast('AREA NOT SECURE');
+    return;
+  }
+  if (kind === "exit") {
     if (Bridge.busy) return;
     freeze();
     rpc("finish").then((r) => {
@@ -468,20 +628,23 @@ function interact() {
     });
     return;
   }
-  if (FS.state.progress[flags[st]]) {
+  if (FS.state.progress.stations[st]) {
     toast(
-      st === "mad"
-        ? "M.A.D. consumido · Un ajuste por dron."
-        : "Estación ya calibrada.",
+      kind === "mad" ?
+      "M.A.D. consumido · Un ajuste por dron." :
+      "Estación ya calibrada.",
     );
     return;
   }
-  if (st === "mad") {
+  if (kind === "mad") {
+    const eligible = Object.keys(FS.state.weapons).filter(w => FS.state.weapons[w].mods === 0);
+    if (!eligible.length) {
+      toast('No hay arma mejorable. M.A.D. disponible para después.');
+      return;
+    }
     freeze();
     panel(
-      `<div class="eyebrow">M.A.D. // AJUSTE ÚNICO</div><h2>SELECCIONA ARMA</h2><p>El dron admite una calibración. Elige tu mejora.</p><div class="choices">${Object.keys(
-        FS.state.weapons,
-      )
+      `<div class="eyebrow">M.A.D. // AJUSTE ÚNICO</div><h2>SELECCIONA ARMA</h2><p>El dron admite una calibración. Elige tu mejora.</p><div class="choices">${eligible
         .map(
           (w) =>
             `<button data-weapon="${w}">${w === "pistol" ? "PISTOLA<br>Precision Barrel · +15% daño" : "ESCOPETA<br>Tight Choke · mejor alcance"}</button>`,
@@ -493,7 +656,7 @@ function interact() {
     );
     document
       .querySelectorAll("[data-weapon]")
-      .forEach((b) => (b.onclick = () => ask("mad", b.dataset.weapon)));
+      .forEach((b) => (b.onclick = () => ask(st, b.dataset.weapon)));
     button("cancel", resume);
   } else ask(st);
 }

@@ -130,6 +130,7 @@ def main():
             # Pick up actual shotgun and armor using the game's collision handler.
             frame.evaluate("FS.state.player.x=6.5;FS.state.player.y=6.5;pickups()")
             assert frame.evaluate("FS.state.weapons.shotgun.loaded") == 8
+            frame.wait_for_function("!Bridge.busy")
             frame.evaluate('FS.state.player.x=4;FS.state.player.y=3;ask("terminal")')
             frame.wait_for_function("modalQuestion !== null")
             frame.evaluate('submitAnswer("999")')
@@ -138,6 +139,13 @@ def main():
             frame.locator("#again").click()
             solve(frame)
             assert frame.evaluate("FS.state.stats.attempted") == 2
+            # Controlled test arena, no immunity: actual shoot(), damage, ammo, kills.
+            frame.evaluate(
+                "FS.state.player.x=13;FS.state.player.y=8;FS.state.player.angle=0;FS.state.player.hp=100;FS.state.enemies.forEach((e,i)=>{e.x=14+i;e.y=8;e.cooldown=99});FS.cooldown=0;shoot()"
+            )
+            assert frame.evaluate("FS.state.stats.ammo_used") >= 2
+            assert frame.evaluate("FS.state.enemies.some(e=>e.hp<34)")
+            frame.evaluate("FS.state.enemies.forEach(e=>e.hp=0)")
             # M.A.D. applies the Python-owned upgrade.
             frame.wait_for_function("!Bridge.busy")
             frame.evaluate(
@@ -152,13 +160,7 @@ def main():
             frame.wait_for_function("modalQuestion !== null")
             page.screenshot(path=str(OUT / "03-hologram.png"))
             solve(frame)
-            assert frame.evaluate("FS.state.progress.door_open")
-            # Controlled test arena, no immunity: actual shoot(), damage, ammo, kills.
-            frame.evaluate(
-                "FS.state.player.x=13;FS.state.player.y=8;FS.state.player.angle=0;FS.state.player.hp=100;FS.state.enemies.forEach((e,i)=>{e.x=14+i;e.y=8;e.cooldown=99});FS.cooldown=0;shoot()"
-            )
-            assert frame.evaluate("FS.state.stats.ammo_used") >= 2
-            assert frame.evaluate("FS.state.enemies.some(e=>e.hp<34)")
+            assert frame.evaluate("FS.state.progress.doors.power_door")
             # Fixture clears remaining enemies to check finishing/checkpoint flow, not balance.
             frame.evaluate(
                 "FS.state.enemies.forEach(e=>e.hp=0);FS.state.player.x=19;FS.state.player.y=7.5"

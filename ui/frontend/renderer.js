@@ -1,7 +1,9 @@
 "use strict";
 const Render = (() => {
   const canvas = document.querySelector("#world"),
-    ctx = canvas.getContext("2d", { alpha: false });
+    ctx = canvas.getContext("2d", {
+      alpha: false
+    });
   const face = document.querySelector("#face"),
     fc = face.getContext("2d");
   const textures = {};
@@ -23,6 +25,7 @@ const Render = (() => {
     armor: "#669cae",
     shotgun: "#c2cbd0",
   };
+
   function sprite(type) {
     if (textures[type]) return textures[type];
     const c = document.createElement("canvas");
@@ -87,13 +90,13 @@ const Render = (() => {
       g.font = "bold 9px monospace";
       g.textAlign = "center";
       g.fillText(
-        type === "mad"
-          ? "M.A.D."
-          : type === "exit"
-            ? "EXIT"
-            : type === "cache"
-              ? "QC+"
-              : "QC",
+        type === "mad" ?
+        "M.A.D." :
+        type === "exit" ?
+        "EXIT" :
+        type === "cache" ?
+        "QC+" :
+        "QC",
         24,
         25,
       );
@@ -127,6 +130,7 @@ const Render = (() => {
     textures[type] = c;
     return c;
   }
+
   function resize() {
     const r = canvas.getBoundingClientRect();
     W = Math.min(
@@ -142,6 +146,7 @@ const Render = (() => {
   }
   window.addEventListener("resize", resize);
   resize();
+
   function factory(t) {
     const h = canvas.height;
     const grad = ctx.createLinearGradient(0, 0, 0, h);
@@ -179,6 +184,7 @@ const Render = (() => {
     ctx.fillStyle = "#050b1199";
     ctx.fillRect(0, 0, W, h);
   }
+
   function world(fs, t) {
     const s = fs.state,
       p = s.player,
@@ -215,7 +221,7 @@ const Render = (() => {
         sideY = (ry < 0 ? p.y - my : my + 1 - p.y) * ddy,
         side = 0,
         tile = 0;
-      for (let i = 0; i < 60; i++) {
+      for (let i = 0; i < grid.length + grid[0].length; i++) {
         if (sideX < sideY) {
           sideX += ddx;
           mx += sx;
@@ -226,7 +232,7 @@ const Render = (() => {
           side = 1;
         }
         tile = grid[my]?.[mx] ?? 1;
-        if (tile === 3 && s.progress.door_open) tile = 0;
+        if (tile === 3) tile = tileAt(mx, my);
         if (tile) break;
       }
       const dist = Math.max(0.1, side ? sideY - ddy : sideX - ddx),
@@ -237,11 +243,11 @@ const Render = (() => {
       wallX -= Math.floor(wallX);
       let shade = Math.max(0.14, 1 / (1 + dist * 0.13)) * (side ? 0.72 : 1),
         base =
-          tile === 3
-            ? [148, 96, 42]
-            : tile === 2
-              ? [54, 75, 81]
-              : [92, 111, 111];
+        tile === 3 ?
+        [148, 96, 42] :
+        tile === 2 ?
+        [54, 75, 81] :
+        [92, 111, 111];
       if (wallX < 0.035 || wallX > 0.965) shade *= 0.5;
       ctx.fillStyle = `rgb(${base.map((v) => Math.round(v * shade)).join(",")})`;
       ctx.fillRect(x, top, 2, height);
@@ -257,17 +263,27 @@ const Render = (() => {
       }
     }
     const objects = [
-      ...s.enemies.filter((e) => e.hp > 0),
-      ...fs.config.level.items.filter((i) => !s.collected.includes(i.id)),
+      ...s.enemies.filter((e) => e.active && e.hp > 0),
+      ...fs.config.level.items.filter((i) => !s.collected.includes(i.id)).map(i => ({
+        ...i,
+        type: i.type === 'weapon' ? i.weapon : i.type === 'ammo' ? (i.weapon === 'shotgun' ? 'shells' : 'pistol') : i.type
+      })),
+      ...fs.config.level.secrets.filter(i => i.on_shot && !s.progress.secrets[i.id]).map(i => ({
+        ...i,
+        type: 'utcj'
+      })),
       ...fs.config.level.stations
-        .filter((i) => i.id !== "door" || !s.progress.door_open)
-        .map((i) => ({ ...i, type: i.id })),
+      .filter((i) => i.kind !== "door" || !s.progress.doors[i.door_id])
+      .map((i) => ({
+        ...i,
+        type: i.kind
+      })),
     ];
     objects.sort(
       (a, b) =>
-        (b.x - p.x) ** 2 +
-        (b.y - p.y) ** 2 -
-        ((a.x - p.x) ** 2 + (a.y - p.y) ** 2),
+      (b.x - p.x) ** 2 +
+      (b.y - p.y) ** 2 -
+      ((a.x - p.x) ** 2 + (a.y - p.y) ** 2),
     );
     for (const o of objects) {
       const ox = o.x - p.x,
@@ -283,9 +299,7 @@ const Render = (() => {
         top += sh * 0.03;
       const img = sprite(o.type);
       for (
-        let col = Math.max(0, Math.floor(center - sw / 2));
-        col < Math.min(W, center + sw / 2);
-        col++
+        let col = Math.max(0, Math.floor(center - sw / 2)); col < Math.min(W, center + sw / 2); col++
       ) {
         if (depth < zbuf[col]) {
           const tx = Math.min(
@@ -358,28 +372,29 @@ const Render = (() => {
     if (fs.settings.minimap) map(fs);
     drawFace(fs, t);
   }
+
   function map(fs) {
     const p = fs.state.player,
       g = fs.config.level.grid,
-      k = Math.min(3, W / 200),
+      k = Math.min(3, W * .25 / g[0].length, H * .3 / g.length),
       ox = 6,
       oy = 34;
     ctx.fillStyle = "#02080cb0";
-    ctx.fillRect(ox, oy, 28 * k, 15 * k);
-    for (let y = 0; y < 15; y++)
-      for (let x = 0; x < 28; x++) {
+    ctx.fillRect(ox, oy, g[0].length * k, g.length * k);
+    for (let y = 0; y < g.length; y++)
+      for (let x = 0; x < g[0].length; x++) {
         ctx.fillStyle =
-          g[y][x] === 3
-            ? fs.state.progress.door_open
-              ? "#78ddad"
-              : "#e4ac4f"
-            : g[y][x]
-              ? "#455960"
-              : "#152c35";
+          g[y][x] === 3 ?
+          tileAt(x, y) === 0 ?
+          "#78ddad" :
+          "#e4ac4f" :
+          g[y][x] ?
+          "#455960" :
+          "#152c35";
         ctx.fillRect(ox + x * k, oy + y * k, k - 0.4, k - 0.4);
       }
     for (const st of fs.config.level.stations) {
-      ctx.fillStyle = palette[st.id];
+      ctx.fillStyle = palette[st.kind] || "#83ddea";
       ctx.fillRect(ox + st.x * k - 1, oy + st.y * k - 1, 2, 2);
     }
     ctx.fillStyle = "#fff";
@@ -393,6 +408,7 @@ const Render = (() => {
     );
     ctx.stroke();
   }
+
   function drawFace(fs, t) {
     const hp = fs.state.player.hp;
     fc.fillStyle = "#10212b";
@@ -432,11 +448,11 @@ const Render = (() => {
     }
     if (fs.faceUntil > t) {
       fc.strokeStyle =
-        fs.faceExpression === "hurt"
-          ? "#e86a54"
-          : fs.faceExpression === "upgrade"
-            ? "#78e0e8"
-            : "#e5b560";
+        fs.faceExpression === "hurt" ?
+        "#e86a54" :
+        fs.faceExpression === "upgrade" ?
+        "#78e0e8" :
+        "#e5b560";
       fc.lineWidth = 3;
       fc.strokeRect(2, 2, 68, 60);
       if (fs.faceExpression === "focus") {
@@ -445,5 +461,9 @@ const Render = (() => {
       }
     }
   }
-  return { resize, factory, world };
+  return {
+    resize,
+    factory,
+    world
+  };
 })();

@@ -1,8 +1,83 @@
 "use strict";
-function solid(x, y) {
-  const tile = FS.config.level.grid[Math.floor(y)]?.[Math.floor(x)] ?? 1;
-  return tile !== 0 && !(tile === 3 && FS.state.progress.door_open);
+
+function tileAt(x, y) {
+  const cell = FS.config.level.grid[Math.floor(y)]?.[Math.floor(x)] ?? 1;
+  if (cell !== 3) return cell;
+  const door = FS.config.level.doors.find(d => d.cell[0] === Math.floor(x) && d.cell[1] === Math.floor(y));
+  return door && FS.state.progress.doors[door.id] ? 0 : 3;
 }
+
+function solid(x, y) {
+  return tileAt(x, y) !== 0;
+}
+
+function stationKind(id) {
+  return FS.config?.level.stations.find(s => s.id === id)?.kind;
+}
+
+function condition(rule) {
+  if (!rule || !Object.keys(rule).length) return true;
+  if (rule.all) return rule.all.every(condition);
+  if (rule.any) return rule.any.some(condition);
+  if (rule.zone) {
+    const p = FS.state.player,
+      z = rule.zone;
+    return p.x >= z[0] && p.y >= z[1] && p.x <= z[2] && p.y <= z[3];
+  }
+  for (const [k, v] of Object.entries({
+      objective: 'objectives',
+      door_open: 'doors',
+      station_used: 'stations',
+      trigger: 'triggers',
+      wave: 'waves',
+      secret: 'secrets'
+    }))
+    if (rule[k]) return !!FS.state.progress[v][rule[k]];
+  if (rule.item) return Object.values(FS.state.inventory).some(b => b[rule.item] > 0);
+  if (rule.group_defeated) {
+    const es = FS.state.enemies.filter(e => e.group === rule.group_defeated);
+    return es.length > 0 && es.every(e => e.hp <= 0);
+  }
+  return false;
+}
+
+function areaUnsafe() {
+  const p = FS.state.player;
+  return FS.state.enemies.some(e => e.active && e.hp > 0 && Math.hypot(e.x - p.x, e.y - p.y) < 6 && clearLine(p.x, p.y, e.x, e.y));
+}
+// Merge only server-owned fields while realtime movement/combat continue during RPC.
+function mergeWorld(reply, before) {
+  if (!reply?.state || FS.state.run_id !== reply.state.run_id) return;
+  const s = FS.state,
+    r = reply.state;
+  s.progress = r.progress;
+  s.inventory = r.inventory;
+  s.checkpoint = r.checkpoint;
+  s.report = r.report;
+  for (const k of ['correct', 'attempted', 'streak', 'best_streak', 'secrets']) s.stats[k] = r.stats[k];
+  for (const e of s.enemies) {
+    const a = r.enemies.find(x => x.id === e.id);
+    e.active = a.active;
+  }
+  // Apply backend resource deltas, not a stale absolute snapshot.
+  for (const [w, a] of Object.entries(r.weapons)) {
+    if (!s.weapons[w]) s.weapons[w] = clone(a);
+    else {
+      for (const k of ['loaded', 'reserve']) s.weapons[w][k] = Math.max(0, Math.min(k === 'reserve' ? 999 : reply.config.weapons[w].capacity, s.weapons[w][k] + a[k] - (before.weapons[w]?.[k] ?? a[k])));
+      s.weapons[w].mods = a.mods;
+    }
+  }
+  s.player.hp = Math.min(reply.config.level.player_config.max_hp, Math.max(0, s.player.hp + r.player.hp - before.player.hp));
+  s.secret_hits = (s.secret_hits || []).filter(id => !r.progress.secrets[id]);
+  FS.config = reply.config;
+  updateHUD();
+}
+async function syncWorld() {
+  const before = clone(FS.state);
+  const r = await rpc('sync', {}, true, before);
+  mergeWorld(r, before);
+}
+
 function clearLine(x, y, tx, ty) {
   const d = Math.hypot(tx - x, ty - y),
     steps = Math.ceil(d / 0.12);
@@ -11,7 +86,10 @@ function clearLine(x, y, tx, ty) {
       return false;
   return true;
 }
+
 function move(entity, vx, vy, r = 0.2) {
+  const ox = entity.x,
+    oy = entity.y;
   if (
     !solid(entity.x + vx + Math.sign(vx) * r, entity.y - r) &&
     !solid(entity.x + vx + Math.sign(vx) * r, entity.y + r)
@@ -22,7 +100,9 @@ function move(entity, vx, vy, r = 0.2) {
     !solid(entity.x + r, entity.y + vy + Math.sign(vy) * r)
   )
     entity.y += vy;
+  return Math.hypot(entity.x - ox, entity.y - oy) < Math.hypot(vx, vy) * .5;
 }
+
 function selectWeapon(w) {
   if (!FS.state?.weapons[w]) {
     toast("Encuentra la escopeta en la sala inicial");
@@ -31,9 +111,10 @@ function selectWeapon(w) {
   if (FS.state.weapon !== w) window.InputControls?.haptic("weapon");
   FS.state.weapon = w;
   FS.reloading = 0;
-  FS.cooldown = 0.2;
+  // Preserve remaining shot cooldown across weapon switches.
   updateHUD();
 }
+
 function reload() {
   if (!FS.playing || FS.reloading) return;
   const w = FS.state.weapons[FS.state.weapon],
@@ -43,6 +124,7 @@ function reload() {
   toast("RECARGANDO…");
   sound("reload");
 }
+
 function shoot() {
   if (!FS.playing || FS.cooldown > 0 || FS.reloading > 0) return;
   const s = FS.state,
@@ -64,32 +146,58 @@ function shoot() {
   window.InputControls?.haptic("shot");
   const p = s.player,
     targets = s.enemies
-      .filter((e) => e.hp > 0)
-      .map((e) => {
-        let a = Math.atan2(e.y - p.y, e.x - p.x) - p.angle;
-        a = Math.atan2(Math.sin(a), Math.cos(a));
-        return { e, a, d: Math.hypot(e.x - p.x, e.y - p.y) };
-      })
-      .filter(
-        (t) =>
-          Math.abs(t.a) < cfg.spread + Math.atan2(0.26, t.d) &&
-          t.d < cfg.range &&
-          clearLine(p.x, p.y, t.e.x, t.e.y),
-      )
-      .sort((a, b) => a.d - b.d);
+    .filter((e) => e.active && e.hp > 0)
+    .map((e) => {
+      let a = Math.atan2(e.y - p.y, e.x - p.x) - p.angle;
+      a = Math.atan2(Math.sin(a), Math.cos(a));
+      return {
+        e,
+        a,
+        d: Math.hypot(e.x - p.x, e.y - p.y)
+      };
+    })
+    .filter(
+      (t) =>
+      Math.abs(t.a) < cfg.spread + Math.atan2(FS.config.enemies[t.e.type].radius + .08, t.d) &&
+      t.d < cfg.range &&
+      clearLine(p.x, p.y, t.e.x, t.e.y),
+    )
+    .sort((a, b) => a.d - b.d);
   // Pistol hits the closest target; shotgun's cone can hit several with falloff.
   for (const t of targets.slice(0, s.weapon === "shotgun" ? 3 : 1)) {
     const falloff =
       s.weapon === "shotgun" ? Math.max(0.25, 1 - t.d / (cfg.range * 1.3)) : 1;
-    t.e.hp = Math.max(0, t.e.hp - cfg.damage * falloff);
+    const ec = FS.config.enemies[t.e.type],
+      back = Math.atan2(p.y - t.e.y, p.x - t.e.x) - t.e.facing;
+    const rear = Math.abs(Math.atan2(Math.sin(back), Math.cos(back))) > Math.PI - ec.rear_angle ? ec.rear_multiplier : 1;
+    t.e.hp = Math.max(0, t.e.hp - cfg.damage * falloff * rear);
+    t.e.last_known = {
+      x: p.x,
+      y: p.y
+    };
+    t.e.ai_state = 'pursuing';
+    t.e.search_time = ec.search_seconds;
+    FS.worldDirty = true;
     if (t.e.hp <= 0) {
       s.stats.kills++;
       toast(`${FS.config.enemies[t.e.type].name} fuera de servicio`);
     }
   }
+  for (const secret of FS.config.level.secrets) {
+    if (!secret.on_shot || s.progress.secrets[secret.id]) continue;
+    const d = Math.hypot(secret.x - p.x, secret.y - p.y),
+      a = Math.atan2(secret.y - p.y, secret.x - p.x) - p.angle;
+    if (d < cfg.range && Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < cfg.spread + Math.atan2(.25, d) && clearLine(p.x, p.y, secret.x, secret.y) && (!targets.length || d < targets[0].d)) {
+      s.secret_hits = [...new Set([...(s.secret_hits || []), secret.id])];
+      FS.worldDirty = true;
+      toast('PROJECT U.T.C.J. // IDENTIFICADO');
+    }
+  }
   updateHUD();
 }
+
 function hurt(amount) {
+  if (FS.state.player.grace > 0) return;
   const p = FS.state.player,
     absorbed = Math.min(p.armor, amount * 0.5);
   p.armor = Math.max(0, p.armor - absorbed);
@@ -103,6 +211,7 @@ function hurt(amount) {
   updateHUD();
   if (p.hp <= 0) death();
 }
+
 function pickups() {
   const s = FS.state,
     p = s.player;
@@ -112,37 +221,57 @@ function pickups() {
       Math.hypot(item.x - p.x, item.y - p.y) > 0.65
     )
       continue;
-    if (
-      (item.type === "health" && p.hp >= 100) ||
-      (item.type === "armor" && p.armor >= 100) ||
-      (item.type === "shells" && !s.weapons.shotgun)
-    )
-      continue;
-    s.collected.push(item.id);
-    if (item.type === "shotgun") {
-      s.weapons.shotgun = {
-        loaded: 8,
-        reserve: FS.config.difficulty.shotgun_reserve,
-        mods: 0,
-      };
-      selectWeapon("shotgun");
-      expression("smile");
-      toast("ESCOPETA DE CORREDERA · 8 CARTUCHOS");
-    } else if (item.type === "health") {
-      p.hp = Math.min(100, p.hp + item.amount);
-      toast("BOTIQUÍN +" + item.amount);
-    } else if (item.type === "armor") {
-      p.armor = Math.min(100, p.armor + item.amount);
-      toast("ARMADURA +" + item.amount);
-    } else {
-      const key = item.type === "pistol" ? "pistol" : "shotgun";
-      s.weapons[key].reserve += item.amount;
-      toast("MUNICIÓN +" + item.amount);
+    const limits = FS.config.level.player_config;
+    if ((item.type === 'health' && p.hp >= limits.max_hp) || (item.type === 'armor' && p.armor >= limits.max_armor)) continue;
+    switch (item.type) {
+      case 'weapon':
+        if (!FS.config.weapons[item.weapon]) continue;
+        if (!s.weapons[item.weapon]) s.weapons[item.weapon] = {
+          loaded: FS.config.weapons[item.weapon].capacity,
+          reserve: FS.config.difficulty[item.weapon + '_reserve'] || 0,
+          mods: 0
+        };
+        selectWeapon(item.weapon);
+        expression('smile');
+        toast(FS.config.weapons[item.weapon].name);
+        break;
+      case 'ammo':
+        if (!s.weapons[item.weapon]) continue;
+        s.weapons[item.weapon].reserve = Math.min(999, s.weapons[item.weapon].reserve + item.amount);
+        toast('MUNICIÓN +' + item.amount);
+        break;
+      case 'health':
+        p.hp = Math.min(limits.max_hp, p.hp + item.amount);
+        toast('BOTIQUÍN +' + item.amount);
+        break;
+      case 'armor':
+        p.armor = Math.min(limits.max_armor, p.armor + item.amount);
+        toast('ARMADURA +' + item.amount);
+        break;
+      case 'quest_item':
+      case 'key_item':
+        if (!item.item_id) continue;
+        toast('OBJETO // ' + item.item_id);
+        break;
+      case 'secret_item':
+        if (!FS.config.level.secrets.some(x => x.id === item.secret_id)) continue;
+        break;
+      default:
+        if (!FS.badPickups?.has(item.id)) {
+          FS.badPickups ??= new Set();
+          FS.badPickups.add(item.id);
+          console.warn('Pickup desconocido', item.id, item.type);
+          toast('Recurso incompatible: ' + item.id);
+        }
+        continue;
     }
+    s.collected.push(item.id);
+    FS.worldDirty = true;
     sound("pickup");
     updateHUD();
   }
 }
+
 function updateHUD() {
   if (!FS.state) return;
   const s = FS.state,
@@ -150,29 +279,36 @@ function updateHUD() {
   $("#ammo").textContent = w.loaded;
   $("#health").textContent = Math.ceil(s.player.hp);
   $("#armor").textContent = Math.ceil(s.player.armor);
-  $("#healthbar").style.width = s.player.hp + "%";
+  $("#healthbar").style.width = (s.player.hp / FS.config.level.player_config.max_hp * 100) + "%";
   $("#weaponname").textContent = s.weapon === "pistol" ? "PISTOLA" : "ESCOPETA";
   $("#mod").textContent =
     "MOD " + (w.mods ? "I" : "0") + " · TOCA PARA CAMBIAR";
   $("#reserve").textContent = "RESERVA " + w.reserve;
-  $("#objective").textContent =
-    `${s.difficulty.toUpperCase()} // ${s.progress.door_open ? "LLEGA AL FIN DE TURNO" : s.stats.kills === s.enemies.length ? "CALIBRA LA PUERTA ÁMBAR" : "LIMPIA LA ARENA"} · ${s.stats.kills}/${s.enemies.length}`;
+  const objectives = FS.config.level.objectives;
+  $('#objective').textContent = `${s.difficulty.toUpperCase()} // OBJETIVOS ${objectives.filter(o=>s.progress.objectives[o.id]).length}/${objectives.length} · ENEMIES ${s.stats.kills}/${s.enemies.length}`;
+
 }
 async function checkpoint(cp) {
-  const r = await rpc("checkpoint", { checkpoint: cp });
+  const before = clone(FS.state);
+  const r = await rpc("checkpoint", {
+    checkpoint: cp
+  }, true, before);
+  mergeWorld(r, before);
   if (r) {
     FS.state.checkpoint = r.state.checkpoint;
     toast("CHECKPOINT // " + cp.toUpperCase());
   }
 }
+
 function tick(dt, t) {
-  if (!FS.playing || !$("#connection").classList.contains("hidden")) return;
+  if (!FS.playing || FS.recovering || !$("#connection").classList.contains("hidden")) return;
   const s = FS.state,
     p = s.player;
   FS.shotFlash = Math.max(0, FS.shotFlash - dt);
   FS.hurtFlash = Math.max(0, FS.hurtFlash - dt);
   FS.cooldown = Math.max(0, FS.cooldown - dt);
   s.stats.seconds += dt;
+  p.grace = Math.max(0, (p.grace || 0) - dt);
   if (FS.reloading > 0) {
     FS.reloading -= dt;
     if (FS.reloading <= 0) {
@@ -205,18 +341,57 @@ function tick(dt, t) {
   pickups();
   for (const e of s.enemies) {
     if (!FS.playing) break;
-    if (e.hp <= 0) continue;
+    if (!e.active || e.hp <= 0) continue;
     const cfg = FS.config.enemies[e.type],
       dx = p.x - e.x,
       dy = p.y - e.y,
       d = Math.hypot(dx, dy);
     e.cooldown = Math.max(0, (e.cooldown || 0) - dt);
-    if (d > 11 || !clearLine(e.x, e.y, p.x, p.y)) continue;
-    if (d > cfg.range * 0.85) {
-      const v = cfg.speed * FS.config.difficulty.speed * dt;
-      move(e, (dx / d) * v, (dy / d) * v, 0.18);
+    if (e.stun_time > 0) {
+      e.stun_time = Math.max(0, e.stun_time - dt);
+      e.ai_state = 'stunned';
+      continue;
     }
-    if (d < cfg.range && e.cooldown <= 0) {
+    const sees = d < cfg.vision && clearLine(e.x, e.y, p.x, p.y);
+    if (sees) {
+      e.last_known = {
+        x: p.x,
+        y: p.y
+      };
+      e.search_time = cfg.search_seconds;
+      e.ai_state = 'pursuing';
+    } else if (e.last_known && e.search_time > 0) {
+      e.search_time = Math.max(0, e.search_time - dt);
+      e.ai_state = 'searching';
+    } else {
+      e.ai_state = 'idle';
+      e.last_known = null;
+      continue;
+    }
+    if (e.charge_state === 'charging') {
+      e.ai_state = 'charging';
+      e.charge_blocked = move(e, Math.cos(e.facing) * cfg.charge_speed * dt, Math.sin(e.facing) * cfg.charge_speed * dt, cfg.radius);
+      if (e.charge_blocked) {
+        e.charge_state = 'blocked';
+        e.stun_time = cfg.stun_seconds;
+        e.ai_state = 'stunned';
+      }
+      continue;
+    }
+    const target = e.last_known,
+      tx = target.x - e.x,
+      ty = target.y - e.y,
+      td = Math.hypot(tx, ty);
+    if (td > .2 && (!sees || d > cfg.range * .85)) {
+      e.facing = Math.atan2(ty, tx);
+      const v = cfg.speed * FS.config.difficulty.speed * dt;
+      const blocked = move(e, tx / td * v, ty / td * v, cfg.radius);
+      if (blocked) {
+        const side = e.id.length % 2 ? 1 : -1;
+        move(e, -ty / td * v * side, tx / td * v * side, cfg.radius);
+      }
+    }
+    if (sees && d < cfg.range && e.cooldown <= 0) {
       e.cooldown = FS.config.difficulty.attack_interval;
       if (e.type === "rivet") {
         FS.projectiles.push({
@@ -242,33 +417,25 @@ function tick(dt, t) {
     }
     if (b.life <= 0 || solid(b.x, b.y)) FS.projectiles.splice(i, 1);
   }
-  FS.nearest =
-    FS.config.level.stations
-      .map((st) => ({ ...st, d: Math.hypot(st.x - p.x, st.y - p.y) }))
-      .filter(
-        (st) =>
-          st.d < 1.9 &&
-          clearLine(
-            p.x,
-            p.y,
-            st.id === "door" ? Math.min(st.x, 20.8) : st.x,
-            st.y,
-          ),
-      )
-      .sort((a, b) => a.d - b.d)[0] || null;
-  $("#hint").textContent = FS.nearest ? "[ E / USAR ] " + FS.nearest.label : "";
+  FS.nearest = FS.config.level.stations.map(st => ({
+      ...st,
+      d: Math.hypot(st.interaction_point.x - p.x, st.interaction_point.y - p.y)
+    }))
+    .filter(st => st.d < st.interaction_distance && clearLine(p.x, p.y, st.interaction_point.x, st.interaction_point.y)).sort((a, b) => a.d - b.d)[0] || null;
+  $('#hint').textContent = FS.nearest ? '[ E / USAR ] ' + FS.nearest.label : '';
   if (!Bridge.busy && FS.playing) {
-    if (s.checkpoint === "inicio" && p.x > 10.5 && p.x < 14)
-      checkpoint("arena");
-    else if (
-      s.checkpoint !== "final" &&
-      p.x > 18 &&
-      s.enemies.every((e) => e.hp <= 0)
-    )
-      checkpoint("final");
-    else if (t - FS.lastSync > 10) {
+    FS.checkpointAttempts ??= {};
+    const current = FS.config.level.checkpoints.find(c => c.id === s.checkpoint);
+    const next = FS.config.level.checkpoints.filter(c => c.order > current.order && condition(c.prerequisites) && condition({
+      zone: c.zone
+    })).sort((a, b) => a.order - b.order)[0];
+    if (next && t - (FS.checkpointAttempts[next.id] || -100) > 3) {
+      FS.checkpointAttempts[next.id] = t;
+      checkpoint(next.id);
+    } else if (t - FS.lastSync > ((FS.worldDirty || FS.config.level.triggers.some(tr => !s.progress.triggers[tr.id] && condition(tr.condition))) ? .5 : 10)) {
       FS.lastSync = t;
-      rpc("sync");
+      FS.worldDirty = false;
+      syncWorld();
     }
   }
 }

@@ -103,7 +103,9 @@ def at(e, station):
     p = next(
         s for s in level_config(e.state["difficulty"])["stations"] if s["id"] == station
     )
-    e.state["player"].update(x=p["x"] - 0.8, y=p["y"])
+    e.state["player"].update(**p["interaction_point"])
+    for enemy in e.state["enemies"]:
+        enemy["active"] = False
 
 
 def solve(e, station, weapon="pistol", correct=True):
@@ -132,9 +134,11 @@ def test_difficulties_differ_beyond_hp():
 def test_door_retry_and_replay():
     e = new()
     r = solve(e, "door", correct=False)
-    assert not e.state["progress"]["door_open"] and r["stats"]["attempted"] == 1
+    assert (
+        not e.state["progress"]["doors"]["power_door"] and r["stats"]["attempted"] == 1
+    )
     solve(e, "door")
-    assert e.state["progress"]["door_open"]
+    assert e.state["progress"]["doors"]["power_door"]
     assert e.state["stats"]["correct"] == 1 and e.state["stats"]["attempted"] == 2
     old = copy.deepcopy(e.state)
     assert "error" in e.handle(
@@ -156,7 +160,10 @@ def test_mad_upgrade_once(weapon):
         e.sync(snap)
     original = e.config()["weapons"][weapon]
     r = solve(e, "mad", weapon)
-    assert e.state["weapons"][weapon]["mods"] == 1 and e.state["progress"]["mad_used"]
+    assert (
+        e.state["weapons"][weapon]["mods"] == 1
+        and e.state["progress"]["stations"]["mad"]
+    )
     assert r["config"]["weapons"][weapon]["max_mods"] == 4
     if weapon == "pistol":
         assert r["config"]["weapons"][weapon]["damage"] == pytest.approx(
@@ -194,11 +201,11 @@ def test_client_cannot_overwrite_education_or_upgrade():
     e = new()
     snap = copy.deepcopy(e.state)
     snap["stats"]["correct"] = 999
-    snap["progress"]["door_open"] = True
+    snap["progress"]["doors"]["power_door"] = True
     snap["weapons"]["pistol"]["mods"] = 1
     e.sync(snap)
     assert (
-        not e.state["progress"]["door_open"]
+        not e.state["progress"]["doors"]["power_door"]
         and e.state["stats"]["correct"] == 0
         and e.state["weapons"]["pistol"]["mods"] == 0
     )
@@ -216,7 +223,8 @@ def test_checkpoint_restore_and_save_roundtrip():
     e.state["player"]["hp"] = 0
     e.state["weapons"]["pistol"]["loaded"] = 0
     call(e, "restart")
-    assert e.state == e.checkpoint and e.state["player"]["hp"] == 100
+    assert e.state["player"]["hp"] == 100 and e.state["player"]["grace"] > 0
+    assert e.state["checkpoint"] == e.checkpoint["checkpoint"]
 
 
 @pytest.mark.parametrize(

@@ -1,10 +1,14 @@
-"""Versioned portable JSON save; browser persistence, never shared server files."""
+"""Versioned portable JSON; no cross-level or cross-run checkpoint mixing."""
 
 import copy
 import json
 import math
+from .nivel import level_config
+from .armas import WEAPONS
+from .estadisticas import new_stats
+from .world import solid, initial_progress
 
-SAVE_VERSION = 1
+SAVE_VERSION = 2
 
 
 class SaveError(ValueError):
@@ -23,91 +27,148 @@ def number(value, low, high):
 
 
 def validate_state(state):
-    from .nivel import level_config
-    from .estadisticas import new_stats
-    from .dificultad import DIFFICULTIES
-
-    if not isinstance(state, dict) or state.get("difficulty") not in DIFFICULTIES:
+    s = copy.deepcopy(state)
+    if not isinstance(s, dict):
         raise SaveError("Partida incompatible")
-    if not isinstance(state.get("name"), str) or not 1 <= len(state["name"]) <= 24:
+    level = level_config(s["difficulty"], s["level_id"])
+    if s["level_revision"] != level["revision"]:
+        raise SaveError("Revisión de nivel incompatible")
+    if not isinstance(s["name"], str) or not 1 <= len(s["name"]) <= 24:
         raise SaveError("Nombre inválido")
-    if state.get("checkpoint") not in ["inicio", "arena", "final"]:
+    if not isinstance(s["run_id"], str) or not s["run_id"]:
+        raise SaveError("Partida inválida")
+    if s["checkpoint"] not in {c["id"] for c in level["checkpoints"]}:
         raise SaveError("Checkpoint inválido")
-    level = level_config(state["difficulty"])
-    grid = level["grid"]
-    p = state["player"]
-    number(p["x"], 1, 26.99)
-    number(p["y"], 1, 13.99)
-    number(p["angle"], -100000, 100000)
-    if grid[int(p["y"])][int(p["x"])] in (1, 2):
+    template = initial_progress(level)
+    for key in ("stations", "doors", "objectives", "triggers", "waves", "secrets"):
+        if set(s["progress"][key]) != set(template[key]) or any(
+            type(v) is not bool for v in s["progress"][key].values()
+        ):
+            raise SaveError("Progreso inválido")
+    if type(s["progress"]["complete"]) is not bool:
+        raise SaveError("Progreso inválido")
+    utcj = s["progress"]["utcj_found"]
+    if (
+        not isinstance(utcj, list)
+        or len(utcj) != len(set(utcj))
+        or any(
+            i not in {x["id"] for x in level["secrets"] if x["kind"] == "utcj"}
+            or not s["progress"]["secrets"][i]
+            for i in utcj
+        )
+    ):
+        raise SaveError("Secretos inválidos")
+    p = s["player"]
+    number(p["x"], 0, level["width"] - 1e-6)
+    number(p["y"], 0, level["height"] - 1e-6)
+    if solid(level, s["progress"], p["x"], p["y"]):
         raise SaveError("Posición inválida")
-    number(p["hp"], 0, 100)
-    number(p["armor"], 0, 100)
+    number(p["angle"], -1e5, 1e5)
+    number(p["hp"], 0, level["player_config"]["max_hp"])
+    number(p["armor"], 0, level["player_config"]["max_armor"])
+    number(p.get("grace", 0), 0, level["respawn_rules"]["grace"])
     for key in new_stats():
-        number(state["stats"][key], 0, 1e9)
-    if state["stats"]["correct"] > state["stats"]["attempted"]:
+        number(s["stats"][key], 0, 1e9)
+    if s["stats"]["correct"] > s["stats"]["attempted"]:
         raise SaveError("Estadísticas inválidas")
     if (
-        not isinstance(state["weapons"], dict)
-        or "pistol" not in state["weapons"]
-        or set(state["weapons"]) - {"pistol", "shotgun"}
+        not isinstance(s["weapons"], dict)
+        or not s["weapons"]
+        or set(s["weapons"]) - set(WEAPONS)
     ):
         raise SaveError("Armas inválidas")
-    for key, weapon in state["weapons"].items():
-        number(weapon["loaded"], 0, 12 if key == "pistol" else 8)
-        number(weapon["reserve"], 0, 999)
-        number(weapon["mods"], 0, 1)
-    if state["weapon"] not in state["weapons"]:
+    for w, a in s["weapons"].items():
+        for k, maximum in [
+            ("loaded", WEAPONS[w]["capacity"]),
+            ("reserve", 999),
+            ("mods", 1),
+        ]:
+            number(a[k], 0, maximum)
+            if not isinstance(a[k], int):
+                raise SaveError("Inventario inválido")
+    if s["weapon"] not in s["weapons"]:
         raise SaveError("Arma no disponible")
-    for key in ["mad_used", "door_open", "terminal_used", "cache_used", "complete"]:
-        if not isinstance(state["progress"][key], bool):
-            raise SaveError("Progreso inválido")
-    valid_ids = {e["id"] for e in level["enemies"]}
-    if (
-        len(state["enemies"]) != len(valid_ids)
-        or {e["id"] for e in state["enemies"]} != valid_ids
+    original = {e["id"]: e for e in level["enemies"]}
+    if len(s["enemies"]) != len(original) or {e["id"] for e in s["enemies"]} != set(
+        original
     ):
         raise SaveError("Enemigos inválidos")
-    for e in state["enemies"]:
-        if e["type"] not in ["worker", "crawler", "rivet"]:
-            raise SaveError("Tipo inválido")
-        number(e["x"], 0, 28)
-        number(e["y"], 0, 15)
-        number(e["hp"], 0, 100)
+    for e in s["enemies"]:
+        if (
+            e["type"] != original[e["id"]]["type"]
+            or e["group"] != original[e["id"]]["group"]
+            or type(e["active"]) is not bool
+        ):
+            raise SaveError("Tipo de enemigo inválido")
+        number(e["hp"], 0, level["enemy_types"][e["type"]]["hp"])
+        number(e["x"], 0, level["width"] - 1e-6)
+        number(e["y"], 0, level["height"] - 1e-6)
+        number(e["facing"], -1e5, 1e5)
+        number(e["search_time"], 0, 60)
+        number(e["stun_time"], 0, 60)
+        if (
+            e["ai_state"]
+            not in ("idle", "pursuing", "searching", "stunned", "charging")
+            or e["charge_state"] not in ("idle", "charging", "blocked")
+            or type(e["charge_blocked"]) is not bool
+        ):
+            raise SaveError("Estado IA inválido")
+        if e.get("last_known") is not None:
+            number(e["last_known"]["x"], 0, level["width"])
+            number(e["last_known"]["y"], 0, level["height"])
+    collected = s["collected"]
     if (
-        not isinstance(state["collected"], list)
-        or len(state["collected"]) > 30
-        or set(state["collected"]) - {i["id"] for i in level["items"]}
+        not isinstance(collected, list)
+        or len(collected) != len(set(collected))
+        or set(collected) - {i["id"] for i in level["items"]}
     ):
         raise SaveError("Recursos inválidos")
-    return copy.deepcopy(state)
+    if set(s["inventory"]) != {"quest_items", "key_items"}:
+        raise SaveError("Inventario inválido")
+    for bag in s["inventory"].values():
+        if not isinstance(bag, dict) or len(bag) > 256:
+            raise SaveError("Inventario inválido")
+        for key, n in bag.items():
+            if not isinstance(key, str) or not 1 <= len(key) <= 100:
+                raise SaveError("Objeto inválido")
+            number(n, 0, 999)
+    report = s.get("report")
+    if not isinstance(report, dict) or any(
+        not isinstance(report.get(k), list)
+        for k in ("observations", "incidents", "measurements", "project_utcj")
+    ):
+        raise SaveError("Reporte inválido")
+    return s
 
 
 def make_save(state, checkpoint):
-    return {
-        "version": SAVE_VERSION,
-        "state": copy.deepcopy(state),
-        "checkpoint_state": copy.deepcopy(checkpoint),
-    }
+    return dict(
+        version=SAVE_VERSION,
+        level_id=state["level_id"],
+        state=copy.deepcopy(state),
+        checkpoint_state=copy.deepcopy(checkpoint),
+    )
 
 
 def load_save(data):
     try:
-        if len(json.dumps(data, ensure_ascii=False)) > 120000:
+        if len(json.dumps(data, ensure_ascii=False)) > 500000:
             raise SaveError("Archivo demasiado grande")
         if isinstance(data, str):
-            if len(data) > 100000:
-                raise SaveError("Archivo demasiado grande")
             data = json.loads(data)
         if data["version"] != SAVE_VERSION:
-            raise SaveError("Versión de guardado incompatible")
+            raise SaveError(
+                "Versión de guardado incompatible. Inicia una partida nueva."
+            )
         state = validate_state(data["state"])
         checkpoint = validate_state(data["checkpoint_state"])
-        if (
-            state["difficulty"] != checkpoint["difficulty"]
-            or state["name"] != checkpoint["name"]
+        if data["level_id"] != state["level_id"] or any(
+            state[k] != checkpoint[k]
+            for k in ("level_id", "level_revision", "difficulty", "name", "run_id")
         ):
-            raise SaveError("Checkpoint incompatible")
+            raise SaveError("Checkpoint de otra partida o nivel")
         return state, checkpoint
     except (KeyError, TypeError, ValueError, OverflowError, RecursionError) as exc:
-        raise SaveError("Guardado inválido o incompatible") from exc
+        raise SaveError(
+            f"Guardado inválido o incompatible: {exc}. Puedes iniciar una partida nueva."
+        ) from exc

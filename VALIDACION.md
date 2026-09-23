@@ -1,4 +1,98 @@
-# Validación — Fraction Slayer v0.1.1
+# Validación — Fraction Slayer v0.2-alpha1
+
+## Entorno y resultado de esta entrega
+
+Python 3.12, Streamlit 1.55.0, pytest 9.0.2, Playwright 1.51.0 y Chromium Headless 134. Cada suite de navegador inicia/detiene un servidor Streamlit real y comprueba HTTP 200 en `/_stcore/health`. No se desplegó en una cuenta de Community Cloud.
+
+- `python -m pytest -q`: **79 pruebas aprobadas**. Se mantienen los 37 casos anteriores, adaptando únicamente el esquema de progreso y las nuevas precondiciones explícitas; se añaden 42 casos de motor.
+- `python tests/browser_smoke.py`: aprobado. Menús, CLÁSICO/DOOM, WASD, disparo, pausa, escopeta, error/reintento de preguntas, M.A.D., puerta, combate, checkpoint, muerte, salida, guardar/continuar, móvil, teclado holográfico y rotación.
+- `python tests/mobile_controls.py`: aprobado. Joystick flotante, multitouch real CDP, cambio de arma en movimiento, cinco viewports × tres presets, safe areas simuladas y orientación.
+- `python tests/pc_controls.py`: aprobado. WASD, 1/2 mientras se camina, R, arrastre de ratón, clic izquierdo, Esc y E.
+- `python tests/browser_engine.py`: aprobado. Casos nuevos descritos abajo; incluye pérdida real de estado del motor en Streamlit mediante un wrapper temporal de pruebas. Ese wrapper se elimina y no forma parte del juego.
+- Sintaxis de los cuatro archivos JavaScript modificados: comprobada con `node --check`.
+- Capturas revisadas visualmente: HUD y controles legibles en móvil horizontal; no se rediseñó la interfaz. Evidencia actual en `docs/capturas/v02-*.png`.
+
+## Contratos nuevos cubiertos en Python
+
+| Área | Comprobación |
+|---|---|
+| Entidades | Dos M.A.D. y dos puertas independientes; terminal empotrada usa un punto abierto |
+| Inventario | Fuse `main_power_fuse`, key item, recogida idempotente y rechazo de pickup desconocido sin corrupción |
+| Encuentros | Dormido ignora telemetría de daño/activación; oleada y trigger persistentes; activación por evento y objetivo + zona |
+| Recursos | Munición mínima de oleada una sola vez; checkpoint no cura; reinicio aplica piso de HP/munición y gracia |
+| Checkpoints | IDs, zona, prerrequisitos, orden, posición/ángulo configurados y seguridad en jugador/respawn |
+| Saves | Nivel de 40 × 20 y enemigo de 340 HP; `level_id`, revisión y run ID; rechazo de versión vieja, nivel desconocido y mezcla de checkpoints |
+| Matemáticas | Pool 2/4/8 aun en DOOM; preguntas fijas; formatos decimal/fracción/equivalencia; simplificación no acepta repetir el enunciado |
+| Privacidad | Respuesta fija ausente de configuración pública; respuestas generadas privadas |
+| Transacciones | Falla tardía de recompensa conserva pregunta, estación, inventario y estadísticas; M.A.D. sin arma elegible no se consume |
+| Combate | Estación bloqueada ante amenaza activa visible; dormidos no bloquean; excepción configurable para futuro Converter |
+| Secretos | UTCJ persistente separado de kills; resumen admite `UTCJ: ???` |
+| Salida | Objetivos explícitos permiten terminar con enemigos vivos; industrial_test conserva puerta + arena despejada |
+| Robustez | Estación inexistente devuelve error controlado y permite la siguiente petición; `NEED_SESSION` identificable |
+| Alcanzabilidad | Industrial con gates cerrados y después del gate previo, en ambas dificultades; corredor artificial con dos gates secuenciales |
+
+Los fixtures artificiales solo viven en los tests. No se añadió un nivel jugable ni contenido de The Workshop.
+
+## Contratos nuevos comprobados en navegador
+
+1. Pérdida efectiva del motor Python: carga automática del slot y resync conservando la identidad de partida.
+2. Pérdida con pregunta abierta: nuevo ID de pregunta, sin acierto ni intento ficticio.
+3. Sin slot disponible: vuelve al menú; callbacks antiguos no pueden reanudar gameplay huérfano.
+4. Notificación `visualViewport.resize` y aumento real de viewport de 390 a 422 px: se conservan pointerId, origen y movimiento del joystick.
+5. Escopeta → pistola → escopeta: no reduce cooldown de 0.85 s ni permite otro disparo inmediato.
+6. Dormido: no recibe daño, no se mueve ni bloquea terminales.
+7. Pickup desconocido: no marca collected ni altera munición; el loop sigue.
+8. Tras recibir un disparo y perder LOS: conserva el tiempo de alerta y se mueve hacia la última posición conocida.
+9. Primitiva de carga contra pared: `charge_blocked`, estado bloqueado y stun; daño trasero usa orientación.
+10. Gracia de respawn evita daño mientras está activa.
+11. Excepción de render inyectada: muestra error, mantiene RAF y permite reintentar sin reiniciar la partida.
+
+No hubo errores JavaScript de página no capturados. La excepción de render y el aviso de pickup desconocido se inyectan intencionalmente y aparecen en consola como evidencia del manejo de errores.
+
+## Regresión táctil conservada
+
+Gestos mediante CDP con contactos independientes, no solo clics ni asignación a `FS.move`: joystick + disparo; joystick + cámara; joystick + selector; cuatro dedos con cámara/disparo/cambio de arma simultáneos; soltar un botón no cancela joystick; un segundo toque izquierdo no roba el origen; cancelación del sistema limpia sus contactos.
+
+Viewports: **568×320, 667×375, 844×390, 932×430 y 1024×768**, con Pequeño/Medio/Grande. Vertical **390×844**. Se verifican botones de al menos 44 px, separación y selector dentro del área jugable. Insets simulados: izquierda/derecha 44 px, arriba 12 px y abajo 21 px. Preferencias conservadas tras recarga. Vibración probada con API interceptada, incluido navegador sin API.
+
+## Correcciones encontradas durante la validación
+
+- Un punto de interacción del fixture estaba dentro de su propia puerta cerrada: corregido en los datos de prueba.
+- La configuración pública podía incluir la respuesta de una pregunta fija: eliminada del payload y cubierta por regresión.
+- La simplificación limitada por denominadores podía producir un enunciado ya reducido: ahora genera una fracción reducible dentro del pool y rechaza repetirla.
+- Se cerró una ruta de error de recuperación que podía reanudar un cliente sin backend desde un callback antiguo.
+- La recuperación vuelve a ejecutar el comando después de sincronizar, sin reenviar un snapshot anterior que borraría una recompensa recién aplicada.
+- El smoke test podía pedir una pregunta mientras seguía pendiente la confirmación de una recogida: ahora espera el bridge, como requiere su contrato de una petición a la vez.
+- Recibir un disparo ahora inicia también el tiempo de búsqueda, para conservar la alerta si se pierde LOS antes del siguiente frame.
+- La prueba de recuperación del renderer devolvía accidentalmente una función a Playwright, que intentaba invocarla: corregido el harness, sin cambiar el renderer por ese error.
+
+## Límites y riesgos antes de The Workshop
+
+- No hubo prueba en Safari/WebKit real, iPhone o Android físicos. Falta verificar barras dinámicas, notch real, gestos del sistema, vibración, ergonomía, latencia y rendimiento. La mejora de visualViewport está comprobada en Chromium emulado.
+- Las suites usan posiciones controladas y preparación de enemigos para llegar al final. Verifican los sistemas reales, pero **no equivalen a una partida completa de balance sin intervención**.
+- No hay pathfinding global: buscar/recolocarse no garantiza resolver todos los layouts. Debe comprobarse con el layout de Workshop.
+- Loader aún no decide cuándo cargar ni tiene ataques completos; solo existen sus primitivas. No hay desbloqueo UTCJ 4/4 ni El Toro.
+- El formato de nivel no tiene un validador exhaustivo de contenido. Cada nivel nuevo necesita tests de referencias, alcanzabilidad, seguridad del respawn y recursos antes de encuentros obligatorios.
+- Combate y posiciones siguen siendo telemetría confiada del cliente; no es un sistema antitrampas. Saves v1 se rechazan deliberadamente. El disco de Cloud no se usa para persistir partidas.
+- El juego sigue necesitando conexión con Python. Una pérdida de red prolongada muestra el mecanismo de reintento existente; recuperación de sesión no significa funcionamiento offline.
+
+## Reproducir
+
+```bash
+python -m pip install -r requirements.txt -r requirements-dev.txt
+python -m pytest -q
+python -m playwright install chromium --only-shell
+python tests/browser_smoke.py
+python tests/mobile_controls.py
+python tests/pc_controls.py
+python tests/browser_engine.py
+```
+
+Los scripts guardan logs/capturas en `test-results/` y cierran sus servidores. No requieren Node para ejecutar el juego. Los registros siguientes son históricos y no describen la arquitectura actual.
+
+---
+
+## Registro histórico — v0.1.1
 
 Fecha de la actualización: 23 de septiembre de 2026.
 
