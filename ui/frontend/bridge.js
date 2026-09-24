@@ -2,7 +2,7 @@
 "use strict";
 const Bridge = (() => {
   let active = null,
-    timer = null;
+    timer = null, lastEvent = null;
   const post = (type, data = {}) =>
     window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, "*");
   const height = () => {
@@ -51,6 +51,7 @@ const Bridge = (() => {
   post("streamlit:componentReady", { apiVersion: 1 });
   height();
   return {
+    get last_event() { return lastEvent ? {...lastEvent} : null; },
     get busy() {
       return !!active;
     },
@@ -67,6 +68,7 @@ const Bridge = (() => {
           },
           resolve,
         };
+        lastEvent = {id: active.event.id, action, timestamp: new Date().toISOString()};
         transmit();
       });
     },

@@ -392,6 +392,34 @@ document.addEventListener("pointerlockchange", () => {
 $("#app").addEventListener("contextmenu", (e) => {
   if (FS.playing) e.preventDefault();
 });
+// Diagnostic switch: false hides details, never suppresses the error itself.
+const DEBUG_ENGINE_ERRORS = true;
+function reportEngineError(error) {
+  const report = {
+    name: error?.name || 'Error', message: error?.message || String(error),
+    stack: String(error?.stack || '').split('\n').slice(0, 12).join('\n'),
+    stage: FS.debugStage, level_id: FS.state?.level_id ?? null,
+    checkpoint: FS.state?.checkpoint ?? null, bridge_busy: Bridge.busy,
+    last_event: Bridge.last_event, state_null: FS.state === null,
+    state_undefined: FS.state === undefined, timestamp: new Date().toISOString(),
+    player: FS.state?.player ? {x:FS.state.player.x,y:FS.state.player.y,hp:FS.state.player.hp} : null,
+    checkpoint_ids: FS.config?.level?.checkpoints?.map(c=>c.id) ?? null
+  };
+  FS.lastEngineError = report;
+  console.error('Fraction Slayer frame error', report, error);
+  FS.engineFault = true;
+  freeze();
+  const text = JSON.stringify(report, null, 2);
+  panel('<h2>ERROR DE MOTOR</h2><p>El estado se conserva. Puedes reintentar o volver al menú.</p>' +
+    (DEBUG_ENGINE_ERRORS ? '<pre id="engine-error-details" tabindex="0">'+esc(text)+'</pre><button id="copy-engine-error">COPIAR ERROR</button><p id="copy-error-status" role="status"></p>' : '') +
+    '<button id="retry-frame">REINTENTAR</button><button id="fault-menu">MENÚ</button>', 'engine-error-panel');
+  button('copy-engine-error', async()=>{
+    try {if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(text);$('#copy-error-status').textContent='Error copiado.';}
+    catch {const range=document.createRange();range.selectNodeContents($('#engine-error-details'));const selection=getSelection();selection.removeAllRanges();selection.addRange(range);$('#copy-error-status').textContent='Mantén pulsado el texto para copiarlo.';}
+  });
+  button('retry-frame',()=>{FS.engineFault=false;FS.state?resume():mainMenu();});
+  button('fault-menu',()=>{FS.engineFault=false;mainMenu();});
+}
 let prev = performance.now();
 
 function frame(now) {
@@ -400,23 +428,16 @@ function frame(now) {
   const t = now / 1000;
   try {
     if (!FS.engineFault) {
+      FS.debugStage = 'FRAME_START';
+      FS.debugStage = 'STATE_VALIDATE';
       tick(dt, t);
+      FS.debugStage = 'RENDER_WORLD';
       if (FS.state && !$('#hud').classList.contains('hidden')) Render.world(FS, t);
       else Render.factory(t);
+      FS.debugStage = 'FRAME_END';
     }
   } catch (error) {
-    console.error('Fraction Slayer frame error', error);
-    FS.engineFault = true;
-    freeze();
-    panel('<h2>ERROR DE MOTOR</h2><p>El estado se conserva. Puedes reintentar o volver al menú.</p><button id="retry-frame">REINTENTAR</button><button id="fault-menu">MENÚ</button>');
-    button('retry-frame', () => {
-      FS.engineFault = false;
-      FS.state ? resume() : mainMenu();
-    });
-    button('fault-menu', () => {
-      FS.engineFault = false;
-      mainMenu();
-    });
+    reportEngineError(error);
   } finally {
     requestAnimationFrame(frame);
   }

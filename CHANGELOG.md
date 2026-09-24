@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2-alpha1.1-stable — 2026-09-24
+
+- Conservado el guard de checkpoint de la candidata, sin reaplicarlo ni cambiar reglas.
+- Regresión real de arranque/primer tick/sync, null controlado y saves v1/v2 con Streamlit + Chromium.
+- Diagnóstico de ERROR DE MOTOR por etapa, stack y contexto; botón copiar y texto seleccionable en móvil.
+- Último evento del bridge y logging Python limitado para diagnóstico.
+- Recorrido completo en ambas dificultades, controles móviles/PC y recuperación de sesión verificados.
+- No se reprodujeron crashes espontáneos; defecto `.order` confirmado solo en reproducción A/B controlada.
+
 ## v0.2-alpha1 — Engine preparation for real levels
 
 - Level ID, revisión y SAVE_VERSION 2; rechazo seguro de saves incompatibles.

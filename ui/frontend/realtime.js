@@ -304,6 +304,7 @@ function tick(dt, t) {
   if (!FS.playing || FS.recovering || !$("#connection").classList.contains("hidden")) return;
   const s = FS.state,
     p = s.player;
+  FS.debugStage = 'PLAYER_UPDATE';
   FS.shotFlash = Math.max(0, FS.shotFlash - dt);
   FS.hurtFlash = Math.max(0, FS.hurtFlash - dt);
   FS.cooldown = Math.max(0, FS.cooldown - dt);
@@ -338,7 +339,9 @@ function tick(dt, t) {
     (Math.sin(p.angle) * forward + Math.cos(p.angle) * strafe) * speed,
   );
   if (FS.fireHeld) shoot();
+  FS.debugStage = 'PICKUP_UPDATE';
   pickups();
+  FS.debugStage = 'ENEMY_UPDATE';
   for (const e of s.enemies) {
     if (!FS.playing) break;
     if (!e.active || e.hp <= 0) continue;
@@ -417,16 +420,19 @@ function tick(dt, t) {
     }
     if (b.life <= 0 || solid(b.x, b.y)) FS.projectiles.splice(i, 1);
   }
+  FS.debugStage = 'STATION_UPDATE';
   FS.nearest = FS.config.level.stations.map(st => ({
       ...st,
       d: Math.hypot(st.interaction_point.x - p.x, st.interaction_point.y - p.y)
     }))
     .filter(st => st.d < st.interaction_distance && clearLine(p.x, p.y, st.interaction_point.x, st.interaction_point.y)).sort((a, b) => a.d - b.d)[0] || null;
   $('#hint').textContent = FS.nearest ? '[ E / USAR ] ' + FS.nearest.label : '';
+  FS.debugStage = 'CHECKPOINT_UPDATE';
   if (!Bridge.busy && FS.playing) {
     FS.checkpointAttempts ??= {};
     const current = FS.config.level.checkpoints.find(c => c.id === s.checkpoint);
-    const next = FS.config.level.checkpoints.filter(c => c.order > current.order && condition(c.prerequisites) && condition({
+    const currentOrder = current?.order ?? -1;
+    const next = FS.config.level.checkpoints.filter(c => c.order > currentOrder && condition(c.prerequisites) && condition({
       zone: c.zone
     })).sort((a, b) => a.order - b.order)[0];
     if (next && t - (FS.checkpointAttempts[next.id] || -100) > 3) {

@@ -262,6 +262,7 @@ const Render = (() => {
         ctx.fillRect(x, top + height * 0.12, 2, height * 0.025);
       }
     }
+    fs.debugStage = 'RENDER_ENTITIES';
     const objects = [
       ...s.enemies.filter((e) => e.active && e.hp > 0),
       ...fs.config.level.items.filter((i) => !s.collected.includes(i.id)).map(i => ({
@@ -369,6 +370,7 @@ const Render = (() => {
       ctx.fillStyle = `rgba(191,46,30,${fs.hurtFlash * 0.4})`;
       ctx.fillRect(0, 0, W, H);
     }
+    fs.debugStage = 'RENDER_MINIMAP';
     if (fs.settings.minimap) map(fs);
     drawFace(fs, t);
   }
@@ -410,6 +412,7 @@ const Render = (() => {
   }
 
   function drawFace(fs, t) {
+    fs.debugStage = 'RENDER_HUD';
     const hp = fs.state.player.hp;
     fc.fillStyle = "#10212b";
     fc.fillRect(0, 0, 72, 64);

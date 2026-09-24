@@ -107,6 +107,8 @@ def main():
             frame.locator("#new").click()
             frame.locator("#name").fill("Esteban")
             frame.locator("#next").click()
+            if "--doom" in sys.argv:
+                frame.locator("#doom").click()
             frame.locator("#start").click()
             frame.locator("#enter").click()
             frame.wait_for_function("FS.playing && FS.state !== null")

@@ -792,3 +792,15 @@ input[type="checkbox"] {
 .settings input[type=range]{min-height:36px}
 
 @media(orientation:portrait){.touch-controls #rotate{display:flex}}
+
+/* Error diagnostics remain readable/selectable on short mobile viewports. */
+.panel.engine-error-panel {
+  max-width: min(760px, calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto; touch-action: pan-y; box-sizing: border-box;
+}
+#engine-error-details {
+  white-space: pre-wrap; overflow-wrap: anywhere; text-align: left;
+  font: 12px/1.5 monospace; user-select: text; -webkit-user-select: text;
+  touch-action: pan-y; background: #071116; padding: 12px; color: #e1f5f5;
+}

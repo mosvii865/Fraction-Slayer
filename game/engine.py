@@ -3,13 +3,15 @@
 from copy import deepcopy
 import uuid
 import math
+import logging
+import time
 from .dificultad import get_difficulty
 from .armas import weapon_config, WEAPONS
 from .nivel import level_config
 from .estadisticas import new_stats, register_answer, summary
 from .preguntas import generate_question
 from .mejoras import MODS, eligible_weapons
-from .save_system import make_save, load_save, validate_state
+from .save_system import make_save, load_save, validate_state, SAVE_VERSION
 from .world import (
     entity,
     initial_progress,
@@ -24,6 +26,15 @@ from .world import (
 )
 
 
+LOGGER = logging.getLogger('fraction_slayer.engine')
+if not LOGGER.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+    LOGGER.addHandler(handler)
+LOGGER.setLevel(logging.INFO)
+LOGGER.propagate = False
+
+
 class GameEngine:
     def __init__(self):
         self.state = None
@@ -31,6 +42,7 @@ class GameEngine:
         self.question = None
         self.context = None
         self.processed = {}
+        self._last_sync_log = -30.0
 
     def level(self):
         return level_config(self.state["difficulty"], self.state["level_id"])
@@ -128,6 +140,9 @@ class GameEngine:
             result = self._handle(event)
             result["id"] = eid
         except (ValueError, KeyError, TypeError, IndexError) as exc:
+            LOGGER.exception('action=%s level_id=%s checkpoint=%s save_version=%s',
+                event.get('action'), (self.state or {}).get('level_id'),
+                (self.state or {}).get('checkpoint'), SAVE_VERSION)
             self.state, self.checkpoint, self.question, self.context = previous
             result = {
                 "id": eid,
@@ -138,6 +153,12 @@ class GameEngine:
                     else "INVALID_ACTION"
                 ),
             }
+        action=event.get('action')
+        now=time.monotonic()
+        if result.get('code')=='NEED_SESSION' or (not result.get('error') and action in ('new','load','sync','checkpoint','question','answer','finish') and (action!='sync' or now-self._last_sync_log>=30)):
+            LOGGER.info('action=%s level_id=%s checkpoint=%s save_version=%s code=%s',action,
+                (self.state or {}).get('level_id'),(self.state or {}).get('checkpoint'),SAVE_VERSION,result.get('code','OK'))
+            if action=='sync': self._last_sync_log=now
         self.processed[eid] = result
         if len(self.processed) > 64:
             del self.processed[next(iter(self.processed))]

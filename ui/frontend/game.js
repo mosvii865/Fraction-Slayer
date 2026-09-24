@@ -302,7 +302,7 @@ function mainMenu() {
   freeze();
   uiGameplay(false);
   overlay(
-    `<main class="menu"><div class="hero"><div class="eyebrow">DDI / QUALITY CONTROL DIVISION</div><h1>FRACTION<br><em>SLAYER</em></h1><span class="badge">ESTADÍAS PROFESIONALES • V0.2-ALPHA1</span><p>Primer día. Una fábrica fuera de control.<br>Y una máquina que no sabe redondear.</p><p>La matemática no te impide jugar.<br>Te permite jugar mejor.</p></div><nav class="nav"><button class="primary" id="new">NUEVA PARTIDA <small>01</small></button><button id="continue" ${slot ? "" : "disabled"}>CONTINUAR <small>02</small></button><button id="stats">ESTADÍSTICAS <small>03</small></button><button id="settings">CONFIGURACIÓN <small>04</small></button><button id="credits">CRÉDITOS <small>05</small></button><div class="footer">SISTEMA INGLÉS / FRACCIONAL ↔ DECIMAL<br>ORIGINAL PROTOTYPE · SIN TURNO DE SALIDA</div></nav></main>`,
+    `<main class="menu"><div class="hero"><div class="eyebrow">DDI / QUALITY CONTROL DIVISION</div><h1>FRACTION<br><em>SLAYER</em></h1><span class="badge">ESTADÍAS PROFESIONALES • V0.2-ALPHA1.1-STABLE</span><p>Primer día. Una fábrica fuera de control.<br>Y una máquina que no sabe redondear.</p><p>La matemática no te impide jugar.<br>Te permite jugar mejor.</p></div><nav class="nav"><button class="primary" id="new">NUEVA PARTIDA <small>01</small></button><button id="continue" ${slot ? "" : "disabled"}>CONTINUAR <small>02</small></button><button id="stats">ESTADÍSTICAS <small>03</small></button><button id="settings">CONFIGURACIÓN <small>04</small></button><button id="credits">CRÉDITOS <small>05</small></button><div class="footer">SISTEMA INGLÉS / FRACCIONAL ↔ DECIMAL<br>ORIGINAL PROTOTYPE · SIN TURNO DE SALIDA</div></nav></main>`,
   );
   button("new", newGame);
   button("continue", async () => {
@@ -397,7 +397,7 @@ function statistics(back) {
 
 function credits() {
   panel(
-    `<div class="eyebrow">FRACTION SLAYER / V0.2-ALPHA1</div><h2>CRÉDITOS</h2><p>Diseño y concepto<br><b>Esteban Montaño</b></p><p>Proyecto académico<br><b>Universidad Tecnológica de Ciudad Juárez</b></p><p>Tema: Sistema inglés · Fraccional ↔ Decimal</p><p>Gráficos procedurales y sonidos sintetizados originales.<br>Espacio reservado para futuras atribuciones de assets.</p><p>“La matemática no te impide jugar. Te permite jugar mejor.”</p><button id="back">VOLVER</button>`,
+    `<div class="eyebrow">FRACTION SLAYER / V0.2-ALPHA1.1-STABLE</div><h2>CRÉDITOS</h2><p>Diseño y concepto<br><b>Esteban Montaño</b></p><p>Proyecto académico<br><b>Universidad Tecnológica de Ciudad Juárez</b></p><p>Tema: Sistema inglés · Fraccional ↔ Decimal</p><p>Gráficos procedurales y sonidos sintetizados originales.<br>Espacio reservado para futuras atribuciones de assets.</p><p>“La matemática no te impide jugar. Te permite jugar mejor.”</p><button id="back">VOLVER</button>`,
   );
   button("back", mainMenu);
 }

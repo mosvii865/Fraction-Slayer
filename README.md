@@ -1,4 +1,4 @@
-# Fraction Slayer — v0.2-alpha1
+# Fraction Slayer — v0.2-alpha1.1-stable
 
 **Engine preparation for real levels**
 
@@ -7,6 +7,23 @@ FPS retro educativo original, con Python + Streamlit y renderizado Canvas por ra
 **Diseño y concepto:** Esteban Montaño. **Proyecto académico:** Universidad Tecnológica de Ciudad Juárez.
 
 > La matemática no te impide jugar. Te permite jugar mejor.
+
+## Estabilización v0.2-alpha1.1 — 2026-09-24
+
+Esta entrega parte del ZIP **v0.2-alpha1.1-candidate** adjunto. Conserva su protección `current?.order ?? -1` y el test Python. No modifica gameplay, niveles, saves ni arquitectura.
+
+Validada con **Streamlit real 1.55.0 y Chromium**, en PC y móvil emulado: CLÁSICO/DOOM, primer sync, canvas, HUD, movimiento/cámara/disparo, interacción, M.A.D., puerta, checkpoints, final y CONTINUAR. Saves v2 normales/avanzados cargan; v1 e inválidos se rechazan sin romper la partida. Recuperación de session_state comprobada.
+
+**Precisión del diagnóstico:** Nueva Partida usa `checkpoint="inicio"`, no `null`. No se reprodujo espontáneamente ERROR DE MOTOR con la candidata. La prueba A/B provoca `TypeError: Cannot read properties of undefined (reading 'order')` únicamente al retirar el guard en memoria e introducir `null`; con el guard, el mismo tick selecciona el primer checkpoint y renderiza. Esto confirma el defecto condicional, no la causa histórica de un despliegue remoto al que no se tuvo acceso.
+
+Si reaparece un fallo, **COPIAR ERROR** entrega nombre, mensaje, stack, etapa, nivel, checkpoint, estado y último evento del bridge. Si clipboard no está disponible, queda texto seleccionable. `DEBUG_ENGINE_ERRORS` en `ui/frontend/controls.js` permite ocultar los detalles sin ocultar la excepción. Se mantiene activado en esta entrega. Python registra eventos relevantes y excepciones; los sync exitosos se limitan a uno cada 30 segundos por sesión. No registra respuestas ni el contenido del save.
+
+Resultados y alcance: `VALIDACION.md`. Archivos exactos y líneas relevantes: `CAMBIOS_V0.2-alpha1.1-stable.md`. Nuevas pruebas:
+
+```bash
+python tests/browser_startup.py
+python tests/browser_smoke.py --doom
+```
 
 ## Actualización v0.2-alpha1
 

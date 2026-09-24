@@ -1,3 +1,76 @@
+# Validación — Fraction Slayer v0.2-alpha1.1-stable
+
+Fecha: 2026-09-24. Fuente de verdad: `Fraction_Slayer_v0.2-alpha1.1-candidate.zip`, SHA-256 `a28238d5837165ca5b7cdfacc9997ae4a5764615b1164b98a4ce8ad0ba3bb7b0`.
+
+## Resultado y causa confirmada
+
+La candidata ya contenía el guard `current?.order ?? -1` en `ui/frontend/realtime.js:429`. Se conservó sin cambio semántico (línea 434 de stable por las marcas de diagnóstico). `GameEngine` inicia Nueva Partida con `cp["id"]`, que en industrial_test es **inicio**. SAVE_VERSION sigue en **2**. No se cambió el esquema Python para aceptar `null` ni se fabricó una nueva ruta de arranque.
+
+**No se reprodujo un crash espontáneo** en los escenarios de arranque o regresión. En la prueba A/B, ejecutada dentro del componente servido por Streamlit real, se retiró el guard **solo en memoria** y se inyectó checkpoint null. La primera excepción capturada fue:
+
+```text
+TypeError: Cannot read properties of undefined (reading 'order')
+stage: CHECKPOINT_UPDATE
+level_id: industrial_test
+checkpoint: null
+Bridge.busy: false
+state_null: false
+```
+
+`find()` no encuentra el checkpoint y devuelve undefined; el acceso directo a `.order` falla. Al conservar el guard de la candidata, el mismo tick/render termina sin TypeError y selecciona `inicio`. El stack de esta reproducción muestra `eval` porque el código sin protección se crea únicamente en la prueba, no se escribe en los archivos del juego. La evidencia completa se incluye en `docs/validacion-stable/controlled-null-first-error.json`.
+
+**Esta reproducción confirma el defecto condicional, no que checkpoint null haya causado el incidente original en el despliegue del usuario.** No se dispone del stack de aquel incidente ni se ha accedido a ese despliegue. No se introdujeron supuestos o parches adicionales para atribuirle una causa no observada.
+
+## Tests ejecutados
+
+Entorno: Python 3.12, Streamlit 1.55.0, pytest 9.0.2, Playwright 1.51.0 y Chromium Headless 134. Los scripts inician servidores reales mediante `python -m streamlit run app.py`, esperan `/_stcore/health` HTTP 200 y abren el componente real. No se usó únicamente un arnés HTML.
+
+| Comando | Resultado |
+|---|---|
+| `python -m pytest -q` | **80 passed**; conservados todos los casos de la candidata |
+| `python tests/browser_startup.py` | PC/móvil × CLÁSICO/DOOM, todas las combinaciones aprobadas |
+| `python tests/browser_smoke.py` | Recorrido completo CLÁSICO aprobado |
+| `python tests/browser_smoke.py --doom` | Recorrido completo DOOM aprobado |
+| `python tests/mobile_controls.py` | Multitouch, cinco viewports × tres presets, safe areas y orientación aprobados |
+| `python tests/pc_controls.py` | WASD, ratón, clic, E, R, 1/2 y Esc aprobados |
+| `python tests/browser_engine.py` | Recuperación de sesión, pregunta renovada, salida segura sin slot y regresiones de motor aprobadas |
+| `node --check` sobre JS modificado | Sintaxis correcta |
+
+## Cobertura real de arranque y guardado
+
+`browser_startup.py` crea contextos limpios independientes, abre Nueva Partida por UI, verifica `level_id`, checkpoint inicial, cantidad de enemigos, primer frame completado, píxeles no vacíos en Canvas y HUD visible. Comprueba movimiento, cámara y disparo; en móvil usa contactos CDP reales. El primer sync pasa por Python y reruns de Streamlit.
+
+Después comprueba CONTINUAR tras recargar página con un v2 normal; crea `arena` mediante el backend y vuelve a cargar el v2 avanzado; rechaza un v2 corrupto y un v1 sin ERROR DE MOTOR. Tras v1, el evento del bridge no se repite en bucle y se puede iniciar otra partida. El fixture null está identificado explícitamente: intercepta la solicitud de checkpoint para comprobar qué ID selecciona el JS, sin enviar un estado deliberadamente inválido al backend.
+
+El recorrido de smoke en ambas dificultades verifica recogida de escopeta, daño real, preguntas incorrectas/correctas, mejora M.A.D., puerta, checkpoint final, muerte/reinicio, salida y guardar/continuar. Usa posiciones controladas y prepara enemigos para llegar al final: no es una prueba completa de balance sin intervención.
+
+La suite de sesión elimina realmente el motor de `session_state` mediante un wrapper temporal de pruebas. El cliente realiza load → sync y reanuda sin loop; una pregunta se renueva; sin slot válido permanece en menú. El wrapper se elimina y no se entrega como parte del juego.
+
+No hubo excepciones críticas no controladas durante el uso normal. Son esperados el error `.order` de la prueba A/B, el error de renderer inyectado por la suite de motor y las excepciones Python de saves inválidos: estas se capturan y no tumban Streamlit.
+
+## Revisión de accesos y diagnóstico
+
+Se revisaron los `find()` y accesos iniciales de realtime/renderer/game: checkpoint ya protegido; puerta comprueba existencia; nearest admite null; estación obtiene kind con optional chaining; la sincronización de enemigos exige IDs coincidentes en el backend y la fusión verifica run_id. No se modificaron accesos cuya inconsistencia no fue reproducible en el flujo real.
+
+El bridge mantiene una sola petición pendiente y acepta únicamente la respuesta cuyo ID coincide. La recuperación es una secuencia limitada, sin recursión de load/sync. No se cambió ese protocolo.
+
+`ERROR DE MOTOR` conserva la primera excepción capturada en `FS.lastEngineError`: nombre, mensaje, primeras 12 líneas de stack, etapa, level_id, checkpoint, busy/último evento, estado null/undefined, timestamp y contexto mínimo. Copia por clipboard cuando existe o selección de texto cuando no. Panel con scroll y safe areas. El diagnóstico no se envía automáticamente fuera de la app. `DEBUG_ENGINE_ERRORS=false` oculta detalles; el error sigue visible y registrado.
+
+Python registra action, nivel, checkpoint, SAVE_VERSION y traceback real de fallos. Registra primer sync y después como máximo uno exitoso cada 30 s. No incluye nombre del jugador, respuestas ni payload completo del save.
+
+## Limitaciones restantes
+
+- Chromium real local y móvil emulado; no iPhone Safari/Android físicos ni despliegue remoto de Community Cloud.
+- No se obtuvo el stack del crash original del usuario; no se afirma que todas sus posibles causas estén identificadas.
+- El teclado/cámara de PC y safe areas emuladas pasan, pero ergonomía, barras reales, vibración y rendimiento físico siguen pendientes.
+- El guard permite que el frame tolere null/desconocido; **no convierte esos valores en saves v2 válidos**. Python sigue rechazando checkpoints ajenos al nivel.
+- Si el fallo reaparece en el despliegue, el siguiente paso es copiar el diagnóstico y comprobar que todos los archivos desplegados pertenecen a esta entrega.
+- No se añade The Workshop, contenido, armas, enemigos ni cambios de gameplay.
+
+Los registros a continuación son históricos.
+
+---
+
 # Validación — Fraction Slayer v0.2-alpha1
 
 ## Entorno y resultado de esta entrega

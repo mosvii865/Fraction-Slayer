@@ -1,0 +1,12 @@
+PASS: Actual Streamlit engine loss -> local slot restore -> sync, same run
+PASS: Pending question renewed after session loss, no false attempt/reward
+PASS: Small visualViewport resize keeps pointerId, joystick origin and movement
+PASS: Shotgun switch exploit blocked: remaining cooldown and ammunition preserved
+PASS: Dormant enemy: no hit, no AI and no combat threat
+PASS: Unknown pickup leaves inventory and collected unchanged; loop continues
+PASS: Lost LOS searches last known position instead of permanently freezing
+PASS: Generic charge collision produces explicit blocked/stun state
+PASS: Rear angular multiplier uses facing, without a 3D hitbox
+PASS: Respawn grace blocks damage only while timer is active
+PASS: RAF exception shows error and retry restores rendering
+PASS: Missing session without save stays at menu; stale callbacks cannot resume orphan gameplay

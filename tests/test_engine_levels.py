@@ -3,6 +3,7 @@
 import copy
 import math
 import random
+from pathlib import Path
 import pytest
 from game.engine import GameEngine
 from game.nivel import LEVELS, industrial_test, level_config
@@ -543,3 +544,24 @@ def test_malformed_report_save_fails_safely(lab, report):
     before = copy.deepcopy(e.state)
     reject(e, "load", save=save)
     assert e.state == before
+
+
+def test_frontend_checkpoint_null_guard_present_and_first_checkpoint_order():
+    """Regression guard for a pre-first-checkpoint frontend state.
+
+    Python normally starts industrial_test at its first checkpoint, but the frontend
+    must still tolerate null/missing checkpoint values from transient or restored
+    states without dereferencing undefined.order.
+    """
+    level = industrial_test()
+    ordered = sorted(level["checkpoints"], key=lambda c: c["order"])
+    assert ordered
+    current_order = -1  # JS fallback when find(...) has no match
+    next_points = [c for c in ordered if c["order"] > current_order]
+    assert next_points[0]["id"] == ordered[0]["id"]
+
+    realtime = (
+        Path(__file__).resolve().parents[1] / "ui" / "frontend" / "realtime.js"
+    ).read_text(encoding="utf-8")
+    assert "const currentOrder = current?.order ?? -1;" in realtime
+    assert "c.order > currentOrder" in realtime
