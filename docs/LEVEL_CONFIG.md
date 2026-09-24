@@ -65,7 +65,7 @@ Pregunta fija opcional dentro de `question`:
 
 Las respuestas fijas y generadas permanecen en Python. El frontend recibe la pregunta pública, no `fixed_question`. Categorías: `to_decimal`, `to_fraction`, `equivalence`, `simplify`, `theory`, `special`. Formatos: `decimal`, `fraction`, `integer`, `text`. Las fracciones deben estar reducidas por defecto (`require_reduced`). La equivalencia generada pide decimal; una fija puede declarar el formato esperado. Teoría usa opción múltiple: todavía no existe teclado alfanumérico táctil.
 
-Si se limita un pool a `[2,4,8]`, ni los enunciados fraccionales ni los distractores numéricos introducen pasos de 1/16. `industrial_test` conserva su progresión matemática hasta MOD II. El futuro Workshop debe declarar explícitamente `[2,4,8]` en sus estaciones normales.
+Si se limita un pool a `[2,4,8]`, ni los enunciados fraccionales ni los distractores numéricos introducen pasos de 1/16. `industrial_test` conserva su progresión matemática hasta MOD II. Workshop declara explícitamente `[2,4,8]` en sus estaciones normales.
 
 ## Condiciones y acciones
 
@@ -90,7 +90,7 @@ Una oleada:
 }]
 ```
 
-`activate_group` activa un grupo directamente. Otras acciones utilizan el mismo dispatch transaccional de recompensas. Antes de publicar encuentros grandes obligatorios, declara una fuente mínima garantizada (`ensure_ammo` de la oleada o recurso previo accesible) y verifica alcanzabilidad. No hay un encuentro Loader implementado en esta alpha.
+`activate_group` activa un grupo directamente. Otras acciones utilizan el mismo dispatch transaccional de recompensas. Antes de publicar encuentros grandes obligatorios, declara una fuente mínima garantizada (`ensure_ammo` de la oleada o recurso previo accesible) y verifica alcanzabilidad. Workshop implementa Loader en `ui/frontend/loader.js`.
 
 Recompensas: los tipos de pickup, `upgrade` (`mod: 1` disponible), `door`, `objective`, `secret`, `consume_item` (`item_id`, `bag`, `amount`) y `ensure_ammo`. Toda la lista se aplica a una copia; solo se confirma si todas las operaciones y la validación final son válidas. Un error conserva pregunta, acierto pendiente, estación e inventario. El dron solo muestra armas que todavía admiten MOD I.
 
@@ -119,7 +119,7 @@ Checkpoint: comprueba zona, orden, prerrequisitos y seguridad tanto en el jugado
 
 Terminal normal: rechaza enemigos vivos activos visibles a menos de 6 unidades, distancia a la que el enemigo adquiere persecución. Dormidos, enemigos detrás de paredes o fuera del radio no bloquean. `allow_in_combat` permite la excepción futura de The Converter.
 
-IA: persigue, busca última posición conocida, intenta desplazamiento lateral si está bloqueada y abandona al expirar la búsqueda. Los datos permiten radio, orientación, carga, detección `charge_blocked`, aturdimiento y multiplicador angular trasero. La lógica de cuándo iniciar una carga y el combate completo de Loader quedan pendientes. No hay navegación global ni pathfinding garantizado.
+IA: persigue, busca última posición conocida, intenta desplazamiento lateral si está bloqueada y abandona al expirar la búsqueda. Los datos permiten radio, orientación, carga, detección `charge_blocked`, aturdimiento y multiplicador angular trasero. Loader tiene preparación, carga, impacto/aturdimiento y recuperación; también melee y ground slam. No hay navegación global ni pathfinding garantizado.
 
 ## Validar un nivel futuro
 
@@ -132,3 +132,15 @@ IA: persigue, busca última posición conocida, intenta desplazamiento lateral s
 7. Pruebas de guardar/cargar en cada etapa, muerte y recuperación de sesión.
 
 Los tests artificiales cubren contratos, no sustituyen la validación del layout real ni su balance. No se incluye un editor ni un validador exhaustivo de esquemas de contenido.
+
+## Extensiones usadas por Workshop (alpha2)
+
+- `initial_loadout`: inventario inicial por nivel; ausente conserva el comportamiento anterior.
+- `scale_resources: false`: cantidades explícitas. Pickups admiten `difficulties` y armas `reserve`; sus defaults conservan Industrial Test.
+- Condiciones nuevas: `collected: pickup_id`, `complete: true`, `enemy_hp_below: {id, ratio}`, `trigger_elapsed: {id, seconds}`. El umbral incluye HP cero para no perder un cruce entre dos snapshots. Los timestamps se guardan en `progress.trigger_times`, opcional en saves antiguos.
+- `kind: install` usa RPC `interact`, valida proximidad/seguridad/prerrequisitos y confirma `consume_item` + recompensas atómicamente. No genera pregunta ni suma aciertos.
+- Triggers pueden definir `message` y `priority` para feedback al confirmarse; Python conserva flags y acciones.
+- `exit.auto_zone` permite finalizar al entrar **y** estar dentro de `interaction_distance`, con los objetivos requeridos. No usa todos los kills.
+- `objective_hints`, `zones`, `navigation`, `intro`, `teaser`, `campaign_secrets` y `reward_label` son presentación opcional.
+- Loader persiste `phase_time`, `attack_index`, `cooldown` y fases `preparing`, `charging`, `blocked`, `slamming`, `recovering`; viejos enemigos no necesitan estos campos. Catálogo Loader propio de Workshop, sin alterar HP/IA de otros niveles.
+- No cambia SAVE_VERSION ni la revisión 1 de Industrial Test. Un checkpoint ahora rechaza explícitamente HP cero además de los controles de seguridad existentes.

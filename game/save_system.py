@@ -58,6 +58,13 @@ def validate_state(state):
         )
     ):
         raise SaveError("Secretos inválidos")
+    times = s["progress"].get("trigger_times", {})
+    if not isinstance(times, dict) or set(times) - set(template["triggers"]):
+        raise SaveError("Tiempos de eventos inválidos")
+    for ident, timestamp in times.items():
+        number(timestamp, 0, s["stats"]["seconds"])
+        if not s["progress"]["triggers"][ident]:
+            raise SaveError("Evento no activado")
     p = s["player"]
     number(p["x"], 0, level["width"] - 1e-6)
     number(p["y"], 0, level["height"] - 1e-6)
@@ -108,11 +115,15 @@ def validate_state(state):
         number(e["stun_time"], 0, 60)
         if (
             e["ai_state"]
-            not in ("idle", "pursuing", "searching", "stunned", "charging")
-            or e["charge_state"] not in ("idle", "charging", "blocked")
+            not in ("idle", "pursuing", "searching", "stunned", "charging", "preparing", "slamming", "recovering")
+            or e["charge_state"] not in ("idle", "charging", "blocked", "preparing", "slamming", "recovering")
             or type(e["charge_blocked"]) is not bool
         ):
             raise SaveError("Estado IA inválido")
+        if e["type"] == "loader":
+            for key in ("phase_time", "cooldown"):
+                number(e.get(key, 0), 0, 60)
+            number(e.get("attack_index", 0), 0, 1000000)
         if e.get("last_known") is not None:
             number(e["last_known"]["x"], 0, level["width"])
             number(e["last_known"]["y"], 0, level["height"])

@@ -106,7 +106,7 @@ def main():
             page.screenshot(path=str(OUT / "01-menu.png"))
             frame.locator("#new").click()
             frame.locator("#name").fill("Esteban")
-            frame.locator("#next").click()
+            frame.locator("#level").select_option("industrial_test");frame.locator("#next").click()
             if "--doom" in sys.argv:
                 frame.locator("#doom").click()
             frame.locator("#start").click()
@@ -132,6 +132,7 @@ def main():
             # Pick up actual shotgun and armor using the game's collision handler.
             frame.evaluate("FS.state.player.x=6.5;FS.state.player.y=6.5;pickups()")
             assert frame.evaluate("FS.state.weapons.shotgun.loaded") == 8
+            frame.evaluate("freeze()")  # Quiesce realtime RPC before controlled fixture handoff.
             frame.wait_for_function("!Bridge.busy")
             frame.evaluate('FS.state.player.x=4;FS.state.player.y=3;ask("terminal")')
             frame.wait_for_function("modalQuestion !== null")
@@ -149,6 +150,7 @@ def main():
             assert frame.evaluate("FS.state.enemies.some(e=>e.hp<34)")
             frame.evaluate("FS.state.enemies.forEach(e=>e.hp=0)")
             # M.A.D. applies the Python-owned upgrade.
+            frame.evaluate("freeze()")  # Quiesce realtime RPC before controlled fixture handoff.
             frame.wait_for_function("!Bridge.busy")
             frame.evaluate(
                 'FS.state.player.x=13.5;FS.state.player.y=2.5;ask("mad","shotgun")'
@@ -157,6 +159,7 @@ def main():
             assert frame.evaluate("FS.state.weapons.shotgun.mods") == 1
             assert frame.evaluate("FS.config.weapons.shotgun.range") == 10
             # Door hologram, then real enemy combat.
+            frame.evaluate("freeze()")  # Quiesce realtime RPC before controlled fixture handoff.
             frame.wait_for_function("!Bridge.busy")
             frame.evaluate('FS.state.player.x=20;FS.state.player.y=7.5;ask("door")')
             frame.wait_for_function("modalQuestion !== null")
@@ -203,7 +206,7 @@ def main():
             mp.screenshot(path=str(OUT / "05-mobile-menu.png"))
             mf.locator("#new").tap()
             mf.locator("#name").fill("Practicante móvil")
-            mf.locator("#next").tap()
+            mf.locator("#level").select_option("industrial_test");mf.locator("#next").tap()
             mf.locator("#doom").tap()
             mf.locator("#start").tap()
             mf.locator("#enter").tap()

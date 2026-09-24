@@ -804,3 +804,11 @@ input[type="checkbox"] {
   font: 12px/1.5 monospace; user-select: text; -webkit-user-select: text;
   touch-action: pan-y; background: #071116; padding: 12px; color: #e1f5f5;
 }
+
+/* Campaign additions do not occupy touch-control hit areas. */
+select {font:inherit; background:#10232c; color:#e6ece8; border:1px solid #50828c; padding:12px; width:100%;}
+#bossbar {position:absolute;top:calc(env(safe-area-inset-top,0px) + 49px);left:34%;width:40%;z-index:4;pointer-events:none;text-align:center;background:#08141ce6;color:#ffbe62;font:12px monospace;padding:4px;}
+#bossbar meter {display:block;width:100%;height:10px;accent-color:#efac45;}
+#app:not(.is-playing) #bossbar {display:none;}
+#objective {text-overflow:ellipsis;overflow:hidden;white-space:nowrap;}
+#app.is-playing #bossbar:not(.hidden) ~ #toast {top:calc(87px + var(--safe-top));max-width:42%;font-size:11px;padding:6px 8px;}

@@ -302,7 +302,7 @@ function mainMenu() {
   freeze();
   uiGameplay(false);
   overlay(
-    `<main class="menu"><div class="hero"><div class="eyebrow">DDI / QUALITY CONTROL DIVISION</div><h1>FRACTION<br><em>SLAYER</em></h1><span class="badge">ESTADÍAS PROFESIONALES • V0.2-ALPHA1.1-STABLE</span><p>Primer día. Una fábrica fuera de control.<br>Y una máquina que no sabe redondear.</p><p>La matemática no te impide jugar.<br>Te permite jugar mejor.</p></div><nav class="nav"><button class="primary" id="new">NUEVA PARTIDA <small>01</small></button><button id="continue" ${slot ? "" : "disabled"}>CONTINUAR <small>02</small></button><button id="stats">ESTADÍSTICAS <small>03</small></button><button id="settings">CONFIGURACIÓN <small>04</small></button><button id="credits">CRÉDITOS <small>05</small></button><div class="footer">SISTEMA INGLÉS / FRACCIONAL ↔ DECIMAL<br>ORIGINAL PROTOTYPE · SIN TURNO DE SALIDA</div></nav></main>`,
+    `<main class="menu"><div class="hero"><div class="eyebrow">DDI / QUALITY CONTROL DIVISION</div><h1>FRACTION<br><em>SLAYER</em></h1><span class="badge">ESTADÍAS PROFESIONALES • V0.2-ALPHA2</span><p>Primer día. Una fábrica fuera de control.<br>Y una máquina que no sabe redondear.</p><p>La matemática no te impide jugar.<br>Te permite jugar mejor.</p></div><nav class="nav"><button class="primary" id="new">NUEVA PARTIDA <small>01</small></button><button id="continue" ${slot ? "" : "disabled"}>CONTINUAR <small>02</small></button><button id="stats">ESTADÍSTICAS <small>03</small></button><button id="settings">CONFIGURACIÓN <small>04</small></button><button id="credits">CRÉDITOS <small>05</small></button><div class="footer">SISTEMA INGLÉS / FRACCIONAL ↔ DECIMAL<br>ORIGINAL PROTOTYPE · SIN TURNO DE SALIDA</div></nav></main>`,
   );
   button("new", newGame);
   button("continue", async () => {
@@ -318,19 +318,19 @@ function mainMenu() {
 
 function newGame() {
   panel(
-    `<div class="eyebrow">UTCJ / DDI</div><h2>ESTADÍAS PROFESIONALES</h2><label for="name">NOMBRE DEL PRACTICANTE</label><input id="name" maxlength="24" autocomplete="given-name" placeholder="Tu nombre"><p>ÁREA ASIGNADA: <b>QUALITY CONTROL</b></p><div class="row"><button id="back" class="quiet">VOLVER</button><button id="next" class="primary">ASIGNAR TURNO →</button></div><p>Una nueva partida reemplaza el slot al comenzar. Puedes exportarlo desde Configuración.</p>`,
+    `<div class="eyebrow">UTCJ / DDI</div><h2>ESTADÍAS PROFESIONALES</h2><label for="name">NOMBRE DEL PRACTICANTE</label><input id="name" maxlength="24" autocomplete="given-name" placeholder="Tu nombre"><p>ÁREA ASIGNADA: <b>QUALITY CONTROL</b></p><label for="level">DESTINO</label><select id="level"><option value="workshop">LEVEL 01 — THE WORKSHOP</option><option value="industrial_test">Industrial Test — regresión</option></select><div class="row"><button id="back" class="quiet">VOLVER</button><button id="next" class="primary">ASIGNAR TURNO →</button></div><p>Una nueva partida reemplaza el slot al comenzar. Puedes exportarlo desde Configuración.</p>`,
   );
   button("back", mainMenu);
-  button("next", () => difficulty($("#name").value.trim() || "Practicante"));
+  button("next", () => difficulty($("#name").value.trim() || "Practicante", $("#level").value));
   $("#name").addEventListener("keydown", (e) => {
     if (e.key === "Enter") $("#next").click();
   });
 }
 
-function difficulty(name) {
+function difficulty(name, levelId="workshop") {
   let diff = "clasico";
   panel(
-    `<div class="eyebrow">EXPEDIENTE // ${esc(name)}</div><h2>SELECCIONA DIFICULTAD</h2><div class="difficulties"><button id="classic" class="difficulty selected"><b>CLÁSICO</b><span>Enemigos moderados · Más recursos<br>Preguntas progresivas<br>Más opción múltiple<br>Recomendado para primera partida</span></button><button id="doom" class="difficulty"><b>DOOM</b><span>Más agresividad · Menos recursos<br>MOD II + respuestas manuales<br>Las conversiones importan más<br>No recomendado para tu primer día de estadías.</span></button></div><div class="row"><button id="back" class="quiet">VOLVER</button><button id="start" class="primary">ENTRAR A DDI →</button></div>`,
+    `<div class="eyebrow">EXPEDIENTE // ${esc(name)}</div><h2>SELECCIONA DIFICULTAD</h2><div class="difficulties"><button id="classic" class="difficulty selected"><b>CLÁSICO</b><span>Enemigos moderados · Más recursos<br>Preguntas progresivas<br>Más opción múltiple<br>Recomendado para primera partida</span></button><button id="doom" class="difficulty"><b>DOOM</b><span>Más agresividad · Menos recursos<br>Respuestas manuales en estaciones opcionales<br>Las conversiones importan más<br>No recomendado para tu primer día de estadías.</span></button></div><div class="row"><button id="back" class="quiet">VOLVER</button><button id="start" class="primary">ENTRAR A DDI →</button></div>`,
   );
   button("classic", () => {
     diff = "clasico";
@@ -347,7 +347,8 @@ function difficulty(name) {
     $("#start").disabled = true;
     const r = await rpc("new", {
       name,
-      difficulty: diff
+      difficulty: diff,
+      level_id: levelId
     }, false);
     if (r) {
       applyStart(r);
@@ -359,7 +360,7 @@ function difficulty(name) {
 function intro() {
   freeze();
   panel(
-    `<div class="eyebrow">DDI // REGISTRO DE INGRESO</div><h2>BIENVENIDO A QUALITY CONTROL</h2><p>Tu asesor dijo que solo había que medir unas piezas. <b>The Converter</b> tenía otros planes.</p><p><b>Objetivo:</b> cruza el pasillo, limpia la arena y calibra la puerta ámbar. La terminal verde da munición; el M.A.D. azul mejora un arma; la escopeta está en la sala inicial.</p><p><b>Móvil:</b> joystick flotante izquierdo · arrastra a la derecha para girar · DISPARAR / USAR. Toca ARMAS para elegir sin dejar de caminar.</p><p><b>PC:</b> WASD · clic izquierdo dispara · mouse capturado o arrastre derecho gira · E usa · R recarga · 1/2 armas · Esc pausa. Flechas ← → también giran.</p><div class="row"><button id="enter" class="primary">ESTO SÍ LO VOY A PONER EN EL REPORTE →</button></div>`,
+    `<div class="eyebrow">DDI // REGISTRO DE INGRESO</div><h2>BIENVENIDO A QUALITY CONTROL</h2><p>Tu asesor dijo que solo había que medir unas piezas. <b>The Converter</b> tenía otros planes.</p><p><b>Objetivo:</b> ${esc(FS.config.level.intro || "Cruza el pasillo, limpia la arena y calibra la puerta ámbar. La terminal verde da munición; el M.A.D. azul mejora un arma; la escopeta está en la sala inicial.")}</p><p><b>Móvil:</b> joystick flotante izquierdo · arrastra a la derecha para girar · DISPARAR / USAR. Toca ARMAS para elegir sin dejar de caminar.</p><p><b>PC:</b> WASD · clic izquierdo dispara · mouse capturado o arrastre derecho gira · E usa · R recarga · 1/2 armas · Esc pausa. Flechas ← → también giran.</p><div class="row"><button id="enter" class="primary">ESTO SÍ LO VOY A PONER EN EL REPORTE →</button></div>`,
   );
   button("enter", resume);
 }
@@ -397,7 +398,7 @@ function statistics(back) {
 
 function credits() {
   panel(
-    `<div class="eyebrow">FRACTION SLAYER / V0.2-ALPHA1.1-STABLE</div><h2>CRÉDITOS</h2><p>Diseño y concepto<br><b>Esteban Montaño</b></p><p>Proyecto académico<br><b>Universidad Tecnológica de Ciudad Juárez</b></p><p>Tema: Sistema inglés · Fraccional ↔ Decimal</p><p>Gráficos procedurales y sonidos sintetizados originales.<br>Espacio reservado para futuras atribuciones de assets.</p><p>“La matemática no te impide jugar. Te permite jugar mejor.”</p><button id="back">VOLVER</button>`,
+    `<div class="eyebrow">FRACTION SLAYER / V0.2-ALPHA2</div><h2>CRÉDITOS</h2><p>Diseño y concepto<br><b>Esteban Montaño</b></p><p>Proyecto académico<br><b>Universidad Tecnológica de Ciudad Juárez</b></p><p>Tema: Sistema inglés · Fraccional ↔ Decimal</p><p>Gráficos procedurales y sonidos sintetizados originales.<br>Espacio reservado para futuras atribuciones de assets.</p><p>“La matemática no te impide jugar. Te permite jugar mejor.”</p><button id="back">VOLVER</button>`,
   );
   button("back", mainMenu);
 }
@@ -510,7 +511,7 @@ function death() {
 function mission(stats) {
   freeze();
   panel(
-    `<div class="eyebrow">QUALITY CONTROL // TURNO CERRADO</div><h2 class="success">MISSION COMPLETE</h2>${statHTML(stats)}<p>Primer día de estadías: sobrevivido. The Converter sigue esperando.</p><div class="row"><button id="export">EXPORTAR PARTIDA</button><button id="menu" class="primary">VOLVER AL MENÚ</button></div>`,
+    `<div class="eyebrow">QUALITY CONTROL // TURNO CERRADO</div><h2 class="success">MISSION COMPLETE</h2>${statHTML(stats)}<p>${FS.config.level.teaser ? esc(FS.config.level.teaser).replaceAll("\n", "<br>") : "Primer día de estadías: sobrevivido. The Converter sigue esperando."}</p><div class="row"><button id="export">EXPORTAR PARTIDA</button><button id="menu" class="primary">VOLVER AL MENÚ</button></div>`,
   );
   button("export", exportSave);
   button("menu", mainMenu);
@@ -596,13 +597,14 @@ async function submitAnswer(answer) {
     toast("Sesión restaurada. Resuelve esta nueva calibración.");
     return;
   }
+  worldFeedback(FS.state.progress, r.state.progress);
   FS.state = r.state;
   FS.config = r.config;
   updateHUD();
   sound(r.correct ? "good" : "bad");
   if (r.correct && stationKind(currentStation) === "mad") expression("upgrade");
   panel(
-    `<div class="eyebrow">CALIBRATION HOLOGRAM</div><h2 class="${r.correct ? "success" : "error"}">${r.correct ? (stationKind(currentStation) === "door" ? "ACCESS GRANTED" : stationKind(currentStation) === "mad" ? "MOD I INSTALADO" : "CALIBRATION COMPLETE") : "CALIBRATION ERROR"}</h2><p>${esc(r.explanation)}</p>${r.correct ? `<p>${stationKind(currentStation) === "mad" ? esc(r.reward) + " · Ajuste dimensional aplicado." : stationKind(currentStation) === "terminal" ? "+12 municiones de pistola." : stationKind(currentStation) === "cache" ? "+35 vida · +24 municiones · Secreto encontrado." : "Acceso desbloqueado."}</p>` : "<p>Puedes volver a intentarlo con otra pregunta.</p>"}<div class="row">${!r.correct ? '<button id="again" class="primary">REINTENTAR</button>' : ""}<button id="return">VOLVER AL JUEGO</button></div>`,
+    `<div class="eyebrow">CALIBRATION HOLOGRAM</div><h2 class="${r.correct ? "success" : "error"}">${r.correct ? (stationKind(currentStation) === "door" ? "ACCESS GRANTED" : stationKind(currentStation) === "mad" ? "MOD I INSTALADO" : "CALIBRATION COMPLETE") : "CALIBRATION ERROR"}</h2><p>${esc(r.explanation)}</p>${r.correct ? `<p>${stationKind(currentStation) === "mad" ? esc(r.reward) + " · Ajuste dimensional aplicado." : FS.config.level.stations.find(st=>st.id===currentStation)?.reward_label ? esc(FS.config.level.stations.find(st=>st.id===currentStation).reward_label) : stationKind(currentStation) === "terminal" ? "+12 municiones de pistola." : stationKind(currentStation) === "cache" ? "+35 vida · +24 municiones · Secreto encontrado." : "Acceso desbloqueado."}</p>` : "<p>Puedes volver a intentarlo con otra pregunta.</p>"}<div class="row">${!r.correct ? '<button id="again" class="primary">REINTENTAR</button>' : ""}<button id="return">VOLVER AL JUEGO</button></div>`,
     "hologram " + (stationKind(currentStation) === "door" ? "door" : ""),
   );
   button("again", () => ask(currentStation, currentWeapon));
@@ -636,10 +638,20 @@ function interact() {
     );
     return;
   }
+  if (kind === "install") {
+    if (Bridge.busy) return;
+    freeze();
+    const before=clone(FS.state);
+    rpc('interact',{station:st},true,before).then(r=>{
+      mergeWorld(r,before); resume();
+      if(r) {toast('POWER RESTORED // LOADER MK-I ONLINE');sound('good');}
+    });
+    return;
+  }
   if (kind === "mad") {
     const eligible = Object.keys(FS.state.weapons).filter(w => FS.state.weapons[w].mods === 0);
     if (!eligible.length) {
-      toast('No hay arma mejorable. M.A.D. disponible para después.');
+      toast('NO COMPATIBLE MODIFICATION AVAILABLE · M.A.D. disponible para después.');
       return;
     }
     freeze();

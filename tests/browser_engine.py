@@ -74,7 +74,7 @@ def main():
             page.locator("iframe").first.wait_for()
             f = page.locator("iframe").first.element_handle().content_frame()
             f.locator("#new").tap()
-            f.locator("#next").tap()
+            f.locator("#level").select_option("industrial_test");f.locator("#next").tap()
             f.locator("#start").tap()
             f.locator("#enter").tap()
             f.wait_for_function("FS.playing")

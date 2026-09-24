@@ -157,7 +157,9 @@ def industrial_test():
     )
 
 
-LEVELS = {"industrial_test": industrial_test}
+from .workshop import workshop
+
+LEVELS = {"industrial_test": industrial_test, "workshop": workshop}
 
 
 def level_config(difficulty, level_id="industrial_test"):
@@ -197,9 +199,16 @@ def level_config(difficulty, level_id="industrial_test"):
         )
         enemy.update(entry)
         level["enemies"].append(enemy)
+    level["items"] = [i for i in level["items"] if difficulty in i.get("difficulties", [difficulty])]
     for item in level["items"]:
-        if item["type"] in ("ammo", "health", "armor"):
+        if level.get("scale_resources", True) and item["type"] in ("ammo", "health", "armor"):
             item["amount"] = max(1, round(item["amount"] * cfg["resources"]))
+    if difficulty == "doom" and level_id == "workshop":
+        for station in level["stations"]:
+            if station["kind"] in ("mad", "cache"):
+                q = station["question"]
+                q.update(multiple_choice_allowed=False, manual_allowed=True)
+                q["fixed_question"].update(mode="manual", choices=[])
     for key in (
         "stations",
         "doors",

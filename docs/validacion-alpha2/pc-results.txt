@@ -1,0 +1,1 @@
+PASS: WASD, 1/2 while moving, R, mouse drag and rotation, click fire, Esc, E, cancel. No JS errors.

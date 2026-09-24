@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.2-alpha2 — The Workshop — 2026-09-24
+
+- Primer nivel de campaña: ocho zonas, 21/30 enemigos, cinco calibraciones, dos M.A.D., fusible y energía.
+- Loader MK-I: melee, carga telegrafiada, choque/stun, ground slam, daño trasero y refuerzos al 50%.
+- Emblema UTCJ 1/4 separado de kills; salida por energía + Loader y teaser The Factory.
+- Cuatro checkpoints seguros y suministro mínimo garantizado antes del boss.
+- SAVE_VERSION 2 compatible con Industrial Test de la estable; fases/tiempos de eventos persistentes.
+- Industrial Test seleccionable y controles móviles/PC/diagnóstico conservados.
+- Corregidos durante validación: distancia de salida automática y evento de mitad de vida con sync demorado.
+- Tests Python y recorridos en Streamlit real; balance/duración física pendientes.
+
 ## v0.2-alpha1.1-stable — 2026-09-24
 
 - Conservado el guard de checkpoint de la candidata, sin reaplicarlo ni cambiar reglas.

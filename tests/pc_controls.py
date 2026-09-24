@@ -24,7 +24,7 @@ def main():
             b=p.chromium.launch(**opts);page=b.new_page(viewport={'width':1280,'height':720});errors=[]
             page.on('pageerror',lambda e:errors.append(str(e)));page.goto('http://127.0.0.1:8524')
             page.locator('iframe').first.wait_for();f=page.locator('iframe').first.element_handle().content_frame()
-            f.locator('#new').click();f.locator('#next').click();f.locator('#start').click();f.locator('#enter').click()
+            f.locator('#new').click();f.locator("#level").select_option("industrial_test");f.locator('#next').click();f.locator('#start').click();f.locator('#enter').click()
             assert not f.evaluate('InputControls.touchMode')
             f.evaluate('FS.state.player.x=6.5;FS.state.player.y=6.5;pickups();FS.state.player.x=3.5;FS.state.player.y=4.5;FS.state.player.angle=0')
             f.locator('#world').focus()

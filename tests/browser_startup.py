@@ -47,7 +47,7 @@ def main():
                     page.locator('iframe').first.wait_for()
                     f = page.locator('iframe').first.element_handle().content_frame()
                     f.locator('#new').click()
-                    f.locator('#next').click()
+                    f.locator("#level").select_option("industrial_test");f.locator('#next').click()
                     if difficulty == 'doom': f.locator('#doom').click()
                     f.locator('#start').click()
                     f.locator('#enter').click()
@@ -110,7 +110,7 @@ def main():
                     event=f.evaluate('Bridge.last_event.id');page.wait_for_timeout(300)
                     assert f.evaluate('Bridge.last_event.id') == event
                     # Failed load must not prevent starting another game.
-                    f.locator('#new').click();f.locator('#next').click()
+                    f.locator('#new').click();f.locator("#level").select_option("industrial_test");f.locator('#next').click()
                     if difficulty=='doom':f.locator('#doom').click()
                     f.locator('#start').click();f.locator('#enter').click()
                     f.wait_for_function('FS.playing && FS.debugStage === "FRAME_END"')

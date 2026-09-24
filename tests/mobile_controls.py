@@ -53,7 +53,7 @@ def main():
             page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
             page.goto('http://127.0.0.1:8523');page.locator('iframe').first.wait_for()
             f=page.locator('iframe').first.element_handle().content_frame()
-            f.locator('#new').tap();f.locator('#name').fill('Prueba táctil');f.locator('#next').tap();f.locator('#start').tap();f.locator('#enter').tap()
+            f.locator('#new').tap();f.locator('#name').fill('Prueba táctil');f.locator("#level").select_option("industrial_test");f.locator('#next').tap();f.locator('#start').tap();f.locator('#enter').tap()
             f.wait_for_function('FS.playing');f.evaluate('FS.state.player.x=6.5;FS.state.player.y=6.5;pickups();FS.state.player.x=3.5;FS.state.player.y=4.5;selectWeapon("pistol")')
             assert f.evaluate('FS.settings.controlSize')=='medium'
             t=Touches(ctx,page)

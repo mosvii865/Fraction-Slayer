@@ -33,6 +33,16 @@ function condition(rule) {
       secret: 'secrets'
     }))
     if (rule[k]) return !!FS.state.progress[v][rule[k]];
+  if (rule.collected) return FS.state.collected.includes(rule.collected);
+  if ('complete' in rule) return FS.state.progress.complete===rule.complete;
+  if (rule.enemy_hp_below) {
+    const r=rule.enemy_hp_below,e=FS.state.enemies.find(e=>e.id===r.id);
+    return !!e && e.active && e.hp>=0 && e.hp<=FS.config.enemies[e.type].hp*r.ratio;
+  }
+  if (rule.trigger_elapsed) {
+    const r=rule.trigger_elapsed, start=FS.state.progress.trigger_times?.[r.id];
+    return start!==undefined && FS.state.stats.seconds-start>=r.seconds;
+  }
   if (rule.item) return Object.values(FS.state.inventory).some(b => b[rule.item] > 0);
   if (rule.group_defeated) {
     const es = FS.state.enemies.filter(e => e.group === rule.group_defeated);
@@ -50,6 +60,7 @@ function mergeWorld(reply, before) {
   if (!reply?.state || FS.state.run_id !== reply.state.run_id) return;
   const s = FS.state,
     r = reply.state;
+  worldFeedback(s.progress, r.progress);
   s.progress = r.progress;
   s.inventory = r.inventory;
   s.checkpoint = r.checkpoint;
@@ -105,7 +116,7 @@ function move(entity, vx, vy, r = 0.2) {
 
 function selectWeapon(w) {
   if (!FS.state?.weapons[w]) {
-    toast("Encuentra la escopeta en la sala inicial");
+    toast("Encuentra la escopeta en el mapa");
     return;
   }
   if (FS.state.weapon !== w) window.InputControls?.haptic("weapon");
@@ -175,7 +186,7 @@ function shoot() {
       x: p.x,
       y: p.y
     };
-    t.e.ai_state = 'pursuing';
+    if (t.e.type !== "loader") t.e.ai_state = 'pursuing';
     t.e.search_time = ec.search_seconds;
     FS.worldDirty = true;
     if (t.e.hp <= 0) {
@@ -228,7 +239,7 @@ function pickups() {
         if (!FS.config.weapons[item.weapon]) continue;
         if (!s.weapons[item.weapon]) s.weapons[item.weapon] = {
           loaded: FS.config.weapons[item.weapon].capacity,
-          reserve: FS.config.difficulty[item.weapon + '_reserve'] || 0,
+          reserve: item.reserve ?? (FS.config.difficulty[item.weapon + '_reserve'] || 0),
           mods: 0
         };
         selectWeapon(item.weapon);
@@ -251,7 +262,7 @@ function pickups() {
       case 'quest_item':
       case 'key_item':
         if (!item.item_id) continue;
-        toast('OBJETO // ' + item.item_id);
+        toast('OBJETO // ' + (item.label || item.item_id));
         break;
       case 'secret_item':
         if (!FS.config.level.secrets.some(x => x.id === item.secret_id)) continue;
@@ -287,6 +298,17 @@ function updateHUD() {
   const objectives = FS.config.level.objectives;
   $('#objective').textContent = `${s.difficulty.toUpperCase()} // OBJETIVOS ${objectives.filter(o=>s.progress.objectives[o.id]).length}/${objectives.length} · ENEMIES ${s.stats.kills}/${s.enemies.length}`;
 
+  const hint = FS.config.level.objective_hints?.find(o=>!s.progress.objectives[o.until]);
+  if (hint) {
+    const zone=FS.config.level.zones.find(z=>condition({zone:z.zone}));
+    $('#objective').textContent=(zone?zone.label+' // ':'')+hint.text;
+  }
+  const boss=s.enemies.find(e=>e.type==='loader' && e.active && e.hp>0);
+  $('#bossbar').classList.toggle('hidden',!boss || !FS.playing);
+  if (boss) {
+    $('#bosshp').max=FS.config.enemies[boss.type].hp; $('#bosshp').value=boss.hp;
+    $('#bosslabel').textContent='LOADER MK-I // '+(boss.stun_time>0?'STUNNED':boss.charge_state.toUpperCase());
+  }
 }
 async function checkpoint(cp) {
   const before = clone(FS.state);
@@ -349,6 +371,7 @@ function tick(dt, t) {
       dx = p.x - e.x,
       dy = p.y - e.y,
       d = Math.hypot(dx, dy);
+    if (e.type === "loader") { updateLoader(e,cfg,dt); continue; }
     e.cooldown = Math.max(0, (e.cooldown || 0) - dt);
     if (e.stun_time > 0) {
       e.stun_time = Math.max(0, e.stun_time - dt);
@@ -425,8 +448,14 @@ function tick(dt, t) {
       ...st,
       d: Math.hypot(st.interaction_point.x - p.x, st.interaction_point.y - p.y)
     }))
-    .filter(st => st.d < st.interaction_distance && clearLine(p.x, p.y, st.interaction_point.x, st.interaction_point.y)).sort((a, b) => a.d - b.d)[0] || null;
+    .filter(st => !(st.kind === "install" && s.progress.stations[st.id]) && st.d < st.interaction_distance && clearLine(p.x, p.y, st.interaction_point.x, st.interaction_point.y)).sort((a, b) => a.d - b.d)[0] || null;
   $('#hint').textContent = FS.nearest ? '[ E / USAR ] ' + FS.nearest.label : '';
+  if (t-(FS.lastHud || 0)>.15) {updateHUD();FS.lastHud=t;}
+  const exit=FS.config.level.exit;
+  const exitStation=FS.config.level.stations.find(st=>st.id===exit.station);
+  if (exit.auto_zone && condition({zone:exit.auto_zone}) && condition(exit.condition) && FS.playing && !Bridge.busy && exitStation && Math.hypot(p.x-exitStation.interaction_point.x,p.y-exitStation.interaction_point.y)<exitStation.interaction_distance) {
+    FS.nearest=exitStation; interact(); return;
+  }
   FS.debugStage = 'CHECKPOINT_UPDATE';
   if (!Bridge.busy && FS.playing) {
     FS.checkpointAttempts ??= {};

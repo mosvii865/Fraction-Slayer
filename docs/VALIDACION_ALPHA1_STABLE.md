@@ -1,0 +1,290 @@
+# Validación — Fraction Slayer v0.2-alpha1.1-stable
+
+Fecha: 2026-09-24. Fuente de verdad: `Fraction_Slayer_v0.2-alpha1.1-candidate.zip`, SHA-256 `a28238d5837165ca5b7cdfacc9997ae4a5764615b1164b98a4ce8ad0ba3bb7b0`.
+
+## Resultado y causa confirmada
+
+La candidata ya contenía el guard `current?.order ?? -1` en `ui/frontend/realtime.js:429`. Se conservó sin cambio semántico (línea 434 de stable por las marcas de diagnóstico). `GameEngine` inicia Nueva Partida con `cp["id"]`, que en industrial_test es **inicio**. SAVE_VERSION sigue en **2**. No se cambió el esquema Python para aceptar `null` ni se fabricó una nueva ruta de arranque.
+
+**No se reprodujo un crash espontáneo** en los escenarios de arranque o regresión. En la prueba A/B, ejecutada dentro del componente servido por Streamlit real, se retiró el guard **solo en memoria** y se inyectó checkpoint null. La primera excepción capturada fue:
+
+```text
+TypeError: Cannot read properties of undefined (reading 'order')
+stage: CHECKPOINT_UPDATE
+level_id: industrial_test
+checkpoint: null
+Bridge.busy: false
+state_null: false
+```
+
+`find()` no encuentra el checkpoint y devuelve undefined; el acceso directo a `.order` falla. Al conservar el guard de la candidata, el mismo tick/render termina sin TypeError y selecciona `inicio`. El stack de esta reproducción muestra `eval` porque el código sin protección se crea únicamente en la prueba, no se escribe en los archivos del juego. La evidencia completa se incluye en `docs/validacion-stable/controlled-null-first-error.json`.
+
+**Esta reproducción confirma el defecto condicional, no que checkpoint null haya causado el incidente original en el despliegue del usuario.** No se dispone del stack de aquel incidente ni se ha accedido a ese despliegue. No se introdujeron supuestos o parches adicionales para atribuirle una causa no observada.
+
+## Tests ejecutados
+
+Entorno: Python 3.12, Streamlit 1.55.0, pytest 9.0.2, Playwright 1.51.0 y Chromium Headless 134. Los scripts inician servidores reales mediante `python -m streamlit run app.py`, esperan `/_stcore/health` HTTP 200 y abren el componente real. No se usó únicamente un arnés HTML.
+
+| Comando | Resultado |
+|---|---|
+| `python -m pytest -q` | **80 passed**; conservados todos los casos de la candidata |
+| `python tests/browser_startup.py` | PC/móvil × CLÁSICO/DOOM, todas las combinaciones aprobadas |
+| `python tests/browser_smoke.py` | Recorrido completo CLÁSICO aprobado |
+| `python tests/browser_smoke.py --doom` | Recorrido completo DOOM aprobado |
+| `python tests/mobile_controls.py` | Multitouch, cinco viewports × tres presets, safe areas y orientación aprobados |
+| `python tests/pc_controls.py` | WASD, ratón, clic, E, R, 1/2 y Esc aprobados |
+| `python tests/browser_engine.py` | Recuperación de sesión, pregunta renovada, salida segura sin slot y regresiones de motor aprobadas |
+| `node --check` sobre JS modificado | Sintaxis correcta |
+
+## Cobertura real de arranque y guardado
+
+`browser_startup.py` crea contextos limpios independientes, abre Nueva Partida por UI, verifica `level_id`, checkpoint inicial, cantidad de enemigos, primer frame completado, píxeles no vacíos en Canvas y HUD visible. Comprueba movimiento, cámara y disparo; en móvil usa contactos CDP reales. El primer sync pasa por Python y reruns de Streamlit.
+
+Después comprueba CONTINUAR tras recargar página con un v2 normal; crea `arena` mediante el backend y vuelve a cargar el v2 avanzado; rechaza un v2 corrupto y un v1 sin ERROR DE MOTOR. Tras v1, el evento del bridge no se repite en bucle y se puede iniciar otra partida. El fixture null está identificado explícitamente: intercepta la solicitud de checkpoint para comprobar qué ID selecciona el JS, sin enviar un estado deliberadamente inválido al backend.
+
+El recorrido de smoke en ambas dificultades verifica recogida de escopeta, daño real, preguntas incorrectas/correctas, mejora M.A.D., puerta, checkpoint final, muerte/reinicio, salida y guardar/continuar. Usa posiciones controladas y prepara enemigos para llegar al final: no es una prueba completa de balance sin intervención.
+
+La suite de sesión elimina realmente el motor de `session_state` mediante un wrapper temporal de pruebas. El cliente realiza load → sync y reanuda sin loop; una pregunta se renueva; sin slot válido permanece en menú. El wrapper se elimina y no se entrega como parte del juego.
+
+No hubo excepciones críticas no controladas durante el uso normal. Son esperados el error `.order` de la prueba A/B, el error de renderer inyectado por la suite de motor y las excepciones Python de saves inválidos: estas se capturan y no tumban Streamlit.
+
+## Revisión de accesos y diagnóstico
+
+Se revisaron los `find()` y accesos iniciales de realtime/renderer/game: checkpoint ya protegido; puerta comprueba existencia; nearest admite null; estación obtiene kind con optional chaining; la sincronización de enemigos exige IDs coincidentes en el backend y la fusión verifica run_id. No se modificaron accesos cuya inconsistencia no fue reproducible en el flujo real.
+
+El bridge mantiene una sola petición pendiente y acepta únicamente la respuesta cuyo ID coincide. La recuperación es una secuencia limitada, sin recursión de load/sync. No se cambió ese protocolo.
+
+`ERROR DE MOTOR` conserva la primera excepción capturada en `FS.lastEngineError`: nombre, mensaje, primeras 12 líneas de stack, etapa, level_id, checkpoint, busy/último evento, estado null/undefined, timestamp y contexto mínimo. Copia por clipboard cuando existe o selección de texto cuando no. Panel con scroll y safe areas. El diagnóstico no se envía automáticamente fuera de la app. `DEBUG_ENGINE_ERRORS=false` oculta detalles; el error sigue visible y registrado.
+
+Python registra action, nivel, checkpoint, SAVE_VERSION y traceback real de fallos. Registra primer sync y después como máximo uno exitoso cada 30 s. No incluye nombre del jugador, respuestas ni payload completo del save.
+
+## Limitaciones restantes
+
+- Chromium real local y móvil emulado; no iPhone Safari/Android físicos ni despliegue remoto de Community Cloud.
+- No se obtuvo el stack del crash original del usuario; no se afirma que todas sus posibles causas estén identificadas.
+- El teclado/cámara de PC y safe areas emuladas pasan, pero ergonomía, barras reales, vibración y rendimiento físico siguen pendientes.
+- El guard permite que el frame tolere null/desconocido; **no convierte esos valores en saves v2 válidos**. Python sigue rechazando checkpoints ajenos al nivel.
+- Si el fallo reaparece en el despliegue, el siguiente paso es copiar el diagnóstico y comprobar que todos los archivos desplegados pertenecen a esta entrega.
+- No se añade The Workshop, contenido, armas, enemigos ni cambios de gameplay.
+
+Los registros a continuación son históricos.
+
+---
+
+# Validación — Fraction Slayer v0.2-alpha1
+
+## Entorno y resultado de esta entrega
+
+Python 3.12, Streamlit 1.55.0, pytest 9.0.2, Playwright 1.51.0 y Chromium Headless 134. Cada suite de navegador inicia/detiene un servidor Streamlit real y comprueba HTTP 200 en `/_stcore/health`. No se desplegó en una cuenta de Community Cloud.
+
+- `python -m pytest -q`: **79 pruebas aprobadas**. Se mantienen los 37 casos anteriores, adaptando únicamente el esquema de progreso y las nuevas precondiciones explícitas; se añaden 42 casos de motor.
+- `python tests/browser_smoke.py`: aprobado. Menús, CLÁSICO/DOOM, WASD, disparo, pausa, escopeta, error/reintento de preguntas, M.A.D., puerta, combate, checkpoint, muerte, salida, guardar/continuar, móvil, teclado holográfico y rotación.
+- `python tests/mobile_controls.py`: aprobado. Joystick flotante, multitouch real CDP, cambio de arma en movimiento, cinco viewports × tres presets, safe areas simuladas y orientación.
+- `python tests/pc_controls.py`: aprobado. WASD, 1/2 mientras se camina, R, arrastre de ratón, clic izquierdo, Esc y E.
+- `python tests/browser_engine.py`: aprobado. Casos nuevos descritos abajo; incluye pérdida real de estado del motor en Streamlit mediante un wrapper temporal de pruebas. Ese wrapper se elimina y no forma parte del juego.
+- Sintaxis de los cuatro archivos JavaScript modificados: comprobada con `node --check`.
+- Capturas revisadas visualmente: HUD y controles legibles en móvil horizontal; no se rediseñó la interfaz. Evidencia actual en `docs/capturas/v02-*.png`.
+
+## Contratos nuevos cubiertos en Python
+
+| Área | Comprobación |
+|---|---|
+| Entidades | Dos M.A.D. y dos puertas independientes; terminal empotrada usa un punto abierto |
+| Inventario | Fuse `main_power_fuse`, key item, recogida idempotente y rechazo de pickup desconocido sin corrupción |
+| Encuentros | Dormido ignora telemetría de daño/activación; oleada y trigger persistentes; activación por evento y objetivo + zona |
+| Recursos | Munición mínima de oleada una sola vez; checkpoint no cura; reinicio aplica piso de HP/munición y gracia |
+| Checkpoints | IDs, zona, prerrequisitos, orden, posición/ángulo configurados y seguridad en jugador/respawn |
+| Saves | Nivel de 40 × 20 y enemigo de 340 HP; `level_id`, revisión y run ID; rechazo de versión vieja, nivel desconocido y mezcla de checkpoints |
+| Matemáticas | Pool 2/4/8 aun en DOOM; preguntas fijas; formatos decimal/fracción/equivalencia; simplificación no acepta repetir el enunciado |
+| Privacidad | Respuesta fija ausente de configuración pública; respuestas generadas privadas |
+| Transacciones | Falla tardía de recompensa conserva pregunta, estación, inventario y estadísticas; M.A.D. sin arma elegible no se consume |
+| Combate | Estación bloqueada ante amenaza activa visible; dormidos no bloquean; excepción configurable para futuro Converter |
+| Secretos | UTCJ persistente separado de kills; resumen admite `UTCJ: ???` |
+| Salida | Objetivos explícitos permiten terminar con enemigos vivos; industrial_test conserva puerta + arena despejada |
+| Robustez | Estación inexistente devuelve error controlado y permite la siguiente petición; `NEED_SESSION` identificable |
+| Alcanzabilidad | Industrial con gates cerrados y después del gate previo, en ambas dificultades; corredor artificial con dos gates secuenciales |
+
+Los fixtures artificiales solo viven en los tests. No se añadió un nivel jugable ni contenido de The Workshop.
+
+## Contratos nuevos comprobados en navegador
+
+1. Pérdida efectiva del motor Python: carga automática del slot y resync conservando la identidad de partida.
+2. Pérdida con pregunta abierta: nuevo ID de pregunta, sin acierto ni intento ficticio.
+3. Sin slot disponible: vuelve al menú; callbacks antiguos no pueden reanudar gameplay huérfano.
+4. Notificación `visualViewport.resize` y aumento real de viewport de 390 a 422 px: se conservan pointerId, origen y movimiento del joystick.
+5. Escopeta → pistola → escopeta: no reduce cooldown de 0.85 s ni permite otro disparo inmediato.
+6. Dormido: no recibe daño, no se mueve ni bloquea terminales.
+7. Pickup desconocido: no marca collected ni altera munición; el loop sigue.
+8. Tras recibir un disparo y perder LOS: conserva el tiempo de alerta y se mueve hacia la última posición conocida.
+9. Primitiva de carga contra pared: `charge_blocked`, estado bloqueado y stun; daño trasero usa orientación.
+10. Gracia de respawn evita daño mientras está activa.
+11. Excepción de render inyectada: muestra error, mantiene RAF y permite reintentar sin reiniciar la partida.
+
+No hubo errores JavaScript de página no capturados. La excepción de render y el aviso de pickup desconocido se inyectan intencionalmente y aparecen en consola como evidencia del manejo de errores.
+
+## Regresión táctil conservada
+
+Gestos mediante CDP con contactos independientes, no solo clics ni asignación a `FS.move`: joystick + disparo; joystick + cámara; joystick + selector; cuatro dedos con cámara/disparo/cambio de arma simultáneos; soltar un botón no cancela joystick; un segundo toque izquierdo no roba el origen; cancelación del sistema limpia sus contactos.
+
+Viewports: **568×320, 667×375, 844×390, 932×430 y 1024×768**, con Pequeño/Medio/Grande. Vertical **390×844**. Se verifican botones de al menos 44 px, separación y selector dentro del área jugable. Insets simulados: izquierda/derecha 44 px, arriba 12 px y abajo 21 px. Preferencias conservadas tras recarga. Vibración probada con API interceptada, incluido navegador sin API.
+
+## Correcciones encontradas durante la validación
+
+- Un punto de interacción del fixture estaba dentro de su propia puerta cerrada: corregido en los datos de prueba.
+- La configuración pública podía incluir la respuesta de una pregunta fija: eliminada del payload y cubierta por regresión.
+- La simplificación limitada por denominadores podía producir un enunciado ya reducido: ahora genera una fracción reducible dentro del pool y rechaza repetirla.
+- Se cerró una ruta de error de recuperación que podía reanudar un cliente sin backend desde un callback antiguo.
+- La recuperación vuelve a ejecutar el comando después de sincronizar, sin reenviar un snapshot anterior que borraría una recompensa recién aplicada.
+- El smoke test podía pedir una pregunta mientras seguía pendiente la confirmación de una recogida: ahora espera el bridge, como requiere su contrato de una petición a la vez.
+- Recibir un disparo ahora inicia también el tiempo de búsqueda, para conservar la alerta si se pierde LOS antes del siguiente frame.
+- La prueba de recuperación del renderer devolvía accidentalmente una función a Playwright, que intentaba invocarla: corregido el harness, sin cambiar el renderer por ese error.
+
+## Límites y riesgos antes de The Workshop
+
+- No hubo prueba en Safari/WebKit real, iPhone o Android físicos. Falta verificar barras dinámicas, notch real, gestos del sistema, vibración, ergonomía, latencia y rendimiento. La mejora de visualViewport está comprobada en Chromium emulado.
+- Las suites usan posiciones controladas y preparación de enemigos para llegar al final. Verifican los sistemas reales, pero **no equivalen a una partida completa de balance sin intervención**.
+- No hay pathfinding global: buscar/recolocarse no garantiza resolver todos los layouts. Debe comprobarse con el layout de Workshop.
+- Loader aún no decide cuándo cargar ni tiene ataques completos; solo existen sus primitivas. No hay desbloqueo UTCJ 4/4 ni El Toro.
+- El formato de nivel no tiene un validador exhaustivo de contenido. Cada nivel nuevo necesita tests de referencias, alcanzabilidad, seguridad del respawn y recursos antes de encuentros obligatorios.
+- Combate y posiciones siguen siendo telemetría confiada del cliente; no es un sistema antitrampas. Saves v1 se rechazan deliberadamente. El disco de Cloud no se usa para persistir partidas.
+- El juego sigue necesitando conexión con Python. Una pérdida de red prolongada muestra el mecanismo de reintento existente; recuperación de sesión no significa funcionamiento offline.
+
+## Reproducir
+
+```bash
+python -m pip install -r requirements.txt -r requirements-dev.txt
+python -m pytest -q
+python -m playwright install chromium --only-shell
+python tests/browser_smoke.py
+python tests/mobile_controls.py
+python tests/pc_controls.py
+python tests/browser_engine.py
+```
+
+Los scripts guardan logs/capturas en `test-results/` y cierran sus servidores. No requieren Node para ejecutar el juego. Los registros siguientes son históricos y no describen la arquitectura actual.
+
+---
+
+## Registro histórico — v0.1.1
+
+Fecha de la actualización: 23 de septiembre de 2026.
+
+## Continuidad y alcance
+
+Se continuó sobre los archivos ya modificados, sin reconstruir la v0.1. Antes de la reanudación ya habían pasado las 37 pruebas Python y la regresión general `browser_smoke.py` sobre v0.1.1 (menús, combate, preguntas, M.A.D., puerta, checkpoints, muerte, final, guardar/continuar y móvil emulado). No se repitieron tras la reanudación porque no se modificaron esas reglas.
+
+Se comparó el contenido de los archivos contra `Fraction_Slayer_v0.1(1).zip`: todos los módulos de `game/`, `app.py`, dependencias y configuración de Streamlit permanecen idénticos byte a byte. En `realtime.js` solo se añadieron las llamadas opcionales de vibración, sin cambiar valores o reglas de combate.
+
+## Pruebas pendientes completadas
+
+Entorno: Python 3.12, Streamlit 1.55.0, Chromium Headless 134 y Playwright 1.51.0. Las pruebas levantan Streamlit real y verifican HTTP 200 en `/_stcore/health` antes de abrir la app.
+
+| Comprobación | Resultado |
+|---|---|
+| Origen flotante exacto, zona muerta, intensidad, diagonales, radio máximo y liberación | Aprobado |
+| Joystick + disparar; soltar disparo mantiene movimiento | Aprobado |
+| Segundo dedo en zona izquierda no roba el primer joystick | Aprobado |
+| Joystick + cámara y captura independiente | Aprobado |
+| Joystick + cámara + disparo + selector con cuatro contactos | Aprobado |
+| Cambiar arma con dos dedos sin detener movimiento | Aprobado |
+| Elegir arma cierra el selector y conserva cámara/disparo/movimiento activos | Aprobado |
+| Recargar y pulsar USAR fuera de una estación no cancelan movimiento ni giran cámara | Aprobado |
+| Dos dedos sobre disparo: soltar uno no cancela al otro | Aprobado |
+| Cancelación del sistema sin entradas atascadas | Aprobado |
+| Zona Esquina izquierda ignora toques en la región superior izquierda | Aprobado |
+| Tamaño, zona, radio y vibración se guardan y sobreviven a recarga de página | Aprobado |
+| Pequeño/Medio/Grande en cinco viewports; botones ≥44 px, sin solaparse | Aprobado |
+| Selector dentro del área jugable, incluido 568 × 320 | Aprobado tras ajuste de ancho mínimo |
+| Márgenes seguros simulados: izquierda/derecha 44, arriba 12, abajo 21 px | Aprobado |
+| Vertical libera contactos y pausa; horizontal recupera layout y movimiento | Aprobado |
+| Vibración activada/desactivada y ausencia de API | Aprobado con API simulada |
+| PC: WASD, 1/2 mientras se camina, R, arrastre real de ratón, clic, Esc, E y volver del holograma | Aprobado |
+| Errores JavaScript en las pruebas completadas | Ninguno |
+
+Viewports: **568 × 320, 667 × 375, 844 × 390, 932 × 430 y 1024 × 768**, cada uno con los tres tamaños de controles. Orientación vertical: **390 × 844**. Los gestos simultáneos se enviaron como contactos táctiles mediante CDP, no como simples clics ni asignaciones a `FS.move`. Se verificó desplazamiento real del jugador durante cambio de arma/disparo.
+
+Los bloques se ejecutaron por etapas: interacción/preferencias, layout/safe areas y orientación; se repitió únicamente el bloque afectado por cada corrección. `--layout-only` y `--orientation-only` permiten reproducir esa validación selectiva. La prueba de PC se ejecutó aparte al corregir el fallback del ratón.
+
+## Errores encontrados y correcciones
+
+1. **Simulador:** el helper de pruebas enviaba a `touchEnd` el contacto que debía seguir activo. Se corrigió para finalizar el ID levantado. El fallo no estaba en el joystick y no requirió cambiar sus reglas.
+2. **Selector en pantalla corta:** las etiquetas se envolvían y lo hacían invadir la barra superior. Se fijó un ancho mínimo de 120 px, manteniendo tamaños táctiles y sin solaparlo con los botones.
+3. **Espera de orientación en la prueba:** la visibilidad CSS cambiaba antes de procesarse el evento de resize. Se espera la liberación efectiva de los contactos y la pausa, sin alterar el juego.
+4. **Ratón dentro del iframe:** el sandbox de Streamlit no concede `allow-pointer-lock`. Se conserva la solicitud cuando es posible y se añadió giro por arrastre derecho; clic izquierdo dispara aun sin captura. No se cambiaron permisos del navegador ni la arquitectura.
+
+## Evidencia y límites
+
+Las capturas nuevas están en `docs/capturas/v011-*.png`; las otras son evidencia histórica de v0.1. El juego se probó en navegador emulado, no en Android/iPhone físicos ni Safari real. Las inserciones de safe areas son valores CSS de prueba: no prueban un notch físico o las barras dinámicas reales del sistema.
+
+La vibración se verificó interceptando la API para comprobar los pulsos solicitados y su desactivación; falta evaluar soporte y sensación física. Los gestos reservados del sistema operativo, límites de contactos del dispositivo, latencia y ergonomía con distintos tamaños de mano requieren prueba real. En pantallas muy cortas, Medio y Grande pueden converger parcialmente de tamaño para seguir cabiendo.
+
+Los tests usan posiciones controladas y recogida de la escopeta para llegar al caso de cambio de arma. No modifican enemigos o balance en los archivos del juego. No se ha hecho un nuevo despliegue en Streamlit Community Cloud ni una nueva prueba de balance.
+
+## Reproducir las pruebas de esta actualización
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m playwright install chromium --only-shell
+python tests/mobile_controls.py
+python tests/pc_controls.py
+```
+
+Solo layout y orientación:
+
+```bash
+python tests/mobile_controls.py --layout-only
+python tests/mobile_controls.py --orientation-only
+```
+
+Para repetir voluntariamente la regresión general, siguen disponibles `python -m pytest -q` y `python tests/browser_smoke.py`. No son necesarios para cambiar únicamente documentación.
+
+---
+
+## Registro histórico de v0.1
+
+
+Fecha: 22 de septiembre de 2026.
+
+## Entorno y resultado
+
+- Python 3.12, Streamlit 1.55.0, pytest 9.0.2.
+- Chromium Headless 134 con Playwright 1.51.0 para la integración. Se utilizó esta versión de pruebas porque la descarga de los navegadores más recientes falló en el entorno; no es una restricción del juego ni una dependencia de producción.
+- `python -m pytest -q`: **37 pruebas aprobadas**.
+- Arranque real con `python -m streamlit run app.py`: correcto.
+- `/_stcore/health`: **HTTP 200**, contenido `ok`.
+- `streamlit.testing.v1.AppTest`: **0 excepciones** durante el arranque de `app.py`.
+- Verificación de sintaxis JavaScript con Node: correcta.
+- `python tests/browser_smoke.py`: **aprobado**, sin errores JavaScript de página.
+
+## Cobertura comprobada
+
+### Reglas Python
+
+Parseo exacto de fracciones, decimales, comas y números mixtos; rechazo de entradas inválidas y división entre cero; opciones con una sola respuesta válida; respuestas privadas; mezcla del banco; diferencias reales entre dificultades; reintentos de puertas; mejoras de pistola y escopeta; consumo único de M.A.D.; deduplicación de eventos; protección del progreso educativo frente al snapshot; guardado/restauración; rechazo de datos corruptos; puntuación y rachas; condiciones de fin de misión; conectividad del mapa.
+
+### Navegador con Streamlit real
+
+Menú → nombre → dificultad → introducción; movimiento WASD; disparo y consumo de munición; pausa y continuidad del mundo; recogida de escopeta; respuesta incorrecta y reintento correcto; mejora de escopeta mediante Python; apertura de puerta; daño a enemigos con disparo real; checkpoint; muerte y restauración; MISSION COMPLETE; recarga de página y CONTINUAR desde el navegador.
+
+En viewport móvil **844 × 390** se comprobó el modo DOOM, seis enemigos, movimiento y giro simultáneos mediante dos contactos táctiles independientes, preguntas manuales resueltas con botones del teclado holográfico y pantalla de rotación en **390 × 844**.
+
+Las capturas de menú, gameplay, teclado y misión fueron revisadas visualmente. Se corrigió un aviso temporal que podía tapar el enunciado del holograma. Se incluyen algunas capturas en `docs/capturas/`.
+
+## Alcance y límites de estas pruebas
+
+La integración usa posiciones controladas para alcanzar las estaciones rápidamente y prepara el estado de enemigos para verificar el cierre de misión. El disparo y su daño se prueban antes de esa preparación. **No es una partida completa sin intervención ni una prueba de balance.**
+
+No se ha probado en hardware Android/iPhone físico ni Safari real. Tampoco se ha publicado en una cuenta de Streamlit Community Cloud. El objetivo pendiente es validar esas condiciones y la comodidad táctil en dispositivos reales, especialmente tamaños pequeños, áreas seguras y rendimiento.
+
+## Repetir
+
+Desde la carpeta del proyecto:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+python -m playwright install chromium --only-shell
+python tests/browser_smoke.py
+```
+
+El script de navegador crea y detiene su servidor automáticamente. Las nuevas capturas y el log se guardan en `test-results/`, excluido de Git.

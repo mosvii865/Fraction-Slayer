@@ -1,125 +1,79 @@
-# Fraction Slayer — v0.2-alpha1.1-stable
+# Fraction Slayer v0.2-alpha2 — The Workshop
 
-**Engine preparation for real levels**
-
-FPS retro educativo original, con Python + Streamlit y renderizado Canvas por raycasting. Diseñado para jugar desde el navegador en celular horizontal y PC.
+Primer nivel de campaña completo sobre **v0.2-alpha1.1-stable**. Python + Streamlit conservan preguntas, reglas, recompensas, progreso y guardados; Canvas/JavaScript llevan el FPS en tiempo real. No requiere instalar nada en el celular.
 
 **Diseño y concepto:** Esteban Montaño. **Proyecto académico:** Universidad Tecnológica de Ciudad Juárez.
 
 > La matemática no te impide jugar. Te permite jugar mejor.
 
-## Estabilización v0.2-alpha1.1 — 2026-09-24
+## Jugar
 
-Esta entrega parte del ZIP **v0.2-alpha1.1-candidate** adjunto. Conserva su protección `current?.order ?? -1` y el test Python. No modifica gameplay, niveles, saves ni arquitectura.
+**NUEVA PARTIDA → nombre → LEVEL 01 — THE WORKSHOP → CLÁSICO / DOOM.** Workshop es el destino predeterminado de la interfaz. El selector también ofrece **Industrial Test — regresión**, conservado con su mapa y balance anteriores. La API Python sin `level_id` mantiene ese nivel antiguo para compatibilidad.
 
-Validada con **Streamlit real 1.55.0 y Chromium**, en PC y móvil emulado: CLÁSICO/DOOM, primer sync, canvas, HUD, movimiento/cámara/disparo, interacción, M.A.D., puerta, checkpoints, final y CONTINUAR. Saves v2 normales/avanzados cargan; v1 e inválidos se rechazan sin romper la partida. Recuperación de session_state comprobada.
+Misión: **RESTORE POWER AND REACH THE ELEVATOR**. Eres un estudiante de UTCJ en su primer día de estadías en DDI, Quality Control. Primero combate y exploración; solo la puerta del fusible exige una conversión. Las otras cuatro calibraciones dan ventajas opcionales.
 
-**Precisión del diagnóstico:** Nueva Partida usa `checkpoint="inicio"`, no `null`. No se reprodujo espontáneamente ERROR DE MOTOR con la candidata. La prueba A/B provoca `TypeError: Cannot read properties of undefined (reading 'order')` únicamente al retirar el guard en memoria e introducir `null`; con el guard, el mismo tick selecciona el primer checkpoint y renderiza. Esto confirma el defecto condicional, no la causa histórica de un despliegue remoto al que no se tuvo acceso.
+| Zona | Contenido |
+|---|---|
+| Reception / Inspection Bay | Inicio tranquilo, pistola 12 + 24; dos Workers al avanzar |
+| Tool Storage | +6 balas, +10 HP, terminal opcional 1/2 = .50 → +12 balas |
+| Assembly Floor | Dos oleadas; escopeta durante el combate, 8 + 12 cartuchos |
+| Calibration Room | M.A.D. #1 visible, 3/4 = .75, MOD I de pistola o escopeta |
+| Maintenance Tunnels | +25 armadura, +8 cartuchos; alcoba con M.A.D. #2 y emblema UTCJ |
+| Power Control | Puerta obligatoria .375 = 3/8; fusible; emboscada; Secure Cache 5/8 = .625 → +12 cartuchos |
+| Generator Hall | Instalar fusible sin pregunta; suministro mínimo; energía y Loader MK-I |
+| Exit Elevator | Se abre con energía restaurada **y** Loader derrotado; estadísticas y teaser de The Factory |
 
-Si reaparece un fallo, **COPIAR ERROR** entrega nombre, mensaje, stack, etapa, nivel, checkpoint, estado y último evento del bridge. Si clipboard no está disponible, queda texto seleccionable. `DEBUG_ENGINE_ERRORS` en `ui/frontend/controls.js` permite ocultar los detalles sin ocultar la excepción. Se mantiene activado en esta entrega. Python registra eventos relevantes y excepciones; los sync exitosos se limitan a uno cada 30 segundos por sesión. No registra respuestas ni el contenido del save.
+Ruta: Reception → Assembly → Calibration → Maintenance → Power Control; vuelve por Maintenance hacia Generator Hall. Tool Storage y la alcoba de servicio son ramales opcionales. El HUD nombra la zona y el objetivo; un rombo ámbar señala el destino en el minimapa. No es una ruta automática.
 
-Resultados y alcance: `VALIDACION.md`. Archivos exactos y líneas relevantes: `CAMBIOS_V0.2-alpha1.1-stable.md`. Nuevas pruebas:
+El segundo M.A.D. pide **7/8 = .875** y mejora el arma pendiente. Si no hay una compatible, informa y sigue disponible; un fallo matemático no consume estaciones. Dispara al emblema oculto: **PROJECT U.T.C.J. 1/4 — SIGNAL REGISTERED**. Si lo omites, el resumen dice **UTCJ: ???**. No cuenta como enemigo ni kill.
 
-```bash
-python tests/browser_startup.py
-python tests/browser_smoke.py --doom
-```
+## Loader MK-I
 
-## Actualización v0.2-alpha1
+250 HP en ambos modos; melee, carga corta con dirección fijada y aviso, ground slam con aviso y recuperación. Chocar contra sólidos lo aturde **1.75 s**. Su núcleo trasero recibe **×1.65** daño; el frontal también permite derrotarlo. Color rojo durante preparación y azul al aturdirse; barra de vida y sonidos sintetizados.
 
-Motor preparado para niveles definidos por datos. `industrial_test` sigue siendo el único nivel jugable y conserva geometría, armas, enemigos y balance de CLÁSICO/DOOM. No se construye todavía The Workshop ni Loader.
+Al cruzar el 50% se registra un evento único. Primero hay alerta y sonido; **dos segundos de juego después** se activan dos Crawlers, más un Rivet en DOOM. Si varios impactos llegan juntos por latencia, el evento no se pierde aunque incluyan el golpe final. El elevador no exige eliminar estos refuerzos ni otros enemigos opcionales.
 
-- Identidad `level_id` y revisión por nivel; save versión **2**, incompatible con saves v0.1/v0.1.1. El error permite empezar una partida nueva. Las preferencias táctiles sí se conservan.
-- Progreso por ID para puertas, M.A.D., terminales, objetivos, triggers, oleadas y secretos; puntos de interacción independientes de la posición visual.
-- Checkpoints por zona/prerrequisitos y respawn seguro, con HP mínimo, munición mínima y breve gracia solamente al reiniciar.
-- Enemigos dormidos y encuentros explícitos por dificultad; búsqueda de última posición vista y capacidades básicas para un futuro Loader.
-- Pickups tipados, quest/key inventory, secretos UTCJ separados de kills y salida por objetivos.
-- Preguntas configurables por estación, formato manual estricto y recompensas transaccionales.
-- Cooldown conservado al cambiar de arma; terminales normales bloqueadas con amenaza cercana visible.
-- Recuperación automática de `session_state` desde el save local y bucle de render recuperable ante errores.
-- Cambios pequeños de altura/visualViewport conservan los contactos; rotación real, cambios fuertes, pausa o pérdida de foco los liberan.
+## CLÁSICO / DOOM
 
-Contrato y ejemplos: [docs/LEVEL_CONFIG.md](docs/LEVEL_CONFIG.md). Resultados: [VALIDACION.md](VALIDACION.md). Lista exacta de archivos: [CAMBIOS_V0.2-alpha1.md](CAMBIOS_V0.2-alpha1.md).
+| Workshop | CLÁSICO | DOOM |
+|---|---:|---:|
+| Worker / Crawler / Rivet / Loader | 11 / 5 / 4 / 1 | 14 / 9 / 6 / 1 |
+| Total | 21 | 30 |
+| Vida del Loader | 250 | 250 |
+| Velocidad / daño base / intervalo | .75 / 8 / 1.70 s | 1.12 / 14 / 1.05 s |
+| Preguntas | Cinco de opción múltiple | Terminal y puerta con opciones; M.A.D./cache manuales |
+| Denominadores | 2, 4, 8 | 2, 4, 8 |
 
-## Controles móviles conservados de v0.1.1
+La pistola comienza con 12 cargadas + 24 de reserva y la escopeta con 8 + 12 en ambos modos. DOOM añade encuentros concretos, posiciones, agresividad y preparación de carga más corta, no más HP. Los recursos de Workshop son explícitos; no heredan el escalado global de Industrial Test. Hay proporcionalmente menos recursos por enemigo en DOOM.
 
-- **Joystick flotante:** toca la mitad izquierda del área jugable y arrastra. El origen coincide con el primer contacto y no se desplaza mientras mantengas ese dedo. Al soltar, el movimiento se detiene y el círculo se desvanece. Dirección continua, incluidas las ocho direcciones y diagonales, con magnitud analógica; la velocidad máxima original no cambia.
-- **Multitouch:** cada `pointerId` tiene un propietario. Movimiento, cámara, disparo y botones no se sobrescriben entre sí. Un segundo toque sobre la zona de movimiento no roba el joystick. Cancelar o soltar un botón solo libera su propio contacto.
-- **Selector compacto:** toca **ARMAS** junto al pulgar derecho, o el arma del HUD, y elige PISTOLA/ESCOPETA. Se cierra al elegir y no pausa movimiento, cámara ni disparo. También muestra munición y disponibilidad. No es necesario soltar el joystick.
-- **Botones grandes:** DISPARAR, USAR, RECARGAR y ARMAS están separados en el lado derecho. La recarga móvil tiene un botón grande propio; se conserva la barra general del HUD.
-- **Preferencias:** Configuración → Pequeño / **Medio** / Grande, zona **Mitad izquierda** / Esquina izquierda, radio máximo del joystick (40–85 px base; 60 predeterminado) y Vibración Sí/No. Se conservan en la misma clave local de configuración. El tamaño también escala el joystick y el selector. En pantallas cortas, los controles se reducen lo necesario para caber sin solaparse.
-- **Zona muerta:** 16% del radio efectivo, con mínimo de 7 px. Fuera de ella, la intensidad crece hasta el radio máximo y se limita a uno; alejar más el dedo no aumenta la velocidad. El radio efectivo combina la preferencia, el tamaño de controles y el espacio disponible.
-- **Márgenes seguros:** se consideran los cuatro `safe-area-inset`, el viewport visible y los cambios de orientación. Los toques no desplazan ni amplían la vista durante gameplay; los paneles conservan desplazamiento y zoom. Solo una rotación real o un cambio fuerte de tamaño libera contactos; las variaciones pequeñas de altura relayoutan sin cancelar el joystick. En vertical se pausa y aparece ROTATE DEVICE; vuelve a horizontal, pulsa CONTINUAR y vuelve a tocar el joystick.
-- **Vibración opcional:** desactivada inicialmente. Pulsos solicitados de 6 ms al disparar, 14 ms al recibir daño y 8 ms al cambiar arma, limitados para evitar acumulación. Si el navegador no admite o no permite vibración, se omite sin errores.
+Después de despejar Generator Hall se asegura una vez un total mínimo de **24 balas y 12 cartuchos**, por arma poseída. Instalar el fusible vuelve a comprobar ese piso una sola vez al iniciar el boss. No se rellena cada frame ni al abrir el menú, y no depende de acertar preguntas opcionales.
 
-El selector de armas no pausa el juego. **Interactuar con una estación que abre un holograma conserva la pausa educativa de v0.1**; pulsar USAR sin abrir un panel no cancela el joystick. Pausa, muerte, pérdida de foco y aviso de desconexión siguen liberando todos los controles por seguridad.
+La economía apunta a ~1.5× CLÁSICO y ~1.28× DOOM bajo una estimación simplificada (65% impactos, 40 de daño medio por cartucho, sin MOD/rear/múltiples blancos; incluye terminal/cache y excluye aportes variables de los pisos de emergencia). **No es balance medido en jugadores.** Objetivo de duración inicial: 8–12 minutos, todavía pendiente de validación humana.
 
-En PC se mantienen WASD, clic izquierdo, E, R y 1/2. Si el iframe impide capturar el ratón, puedes girar arrastrando con el botón derecho; las flechas también funcionan. No se modifican los permisos del iframe.
+## Ejecución local exacta
 
-Consulta `CHANGELOG.md` para el historial; `CAMBIOS_V0.1.1.md` conserva el registro de la actualización anterior.
-
-## Arranque rápido
-
-Recomendado: **Python 3.12**. Ejecuta los comandos dentro de la carpeta que contiene `app.py`.
+Recomendado Python 3.12. Descomprime el ZIP y entra en `fraction-slayer/`:
 
 ```bash
 python -m venv .venv
 ```
 
-Activa el entorno:
-
-```powershell
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-```
-
-```bash
-# macOS / Linux
-source .venv/bin/activate
-```
-
-Instala y ejecuta:
+Windows PowerShell: `.venv\Scripts\Activate.ps1`. macOS/Linux: `source .venv/bin/activate`.
 
 ```bash
 python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-Abre `http://localhost:8501`. No abras `index.html` directamente: las preguntas requieren el proceso Python de Streamlit. No hace falta Node, npm, compilación del frontend, base de datos, API key ni assets externos.
+Abre `http://localhost:8501`. No abras `ui/frontend/index.html` directamente: el componente necesita Python/Streamlit. No hay Node/npm, build del frontend, API keys, base de datos ni CDN necesarios para jugar.
 
-Para probar desde un teléfono en la misma red Wi-Fi:
+Teléfono en la misma Wi-Fi:
 
 ```bash
 python -m streamlit run app.py --server.address 0.0.0.0
 ```
 
-Abre `http://IP_LOCAL_DE_TU_PC:8501` en el teléfono. Permite el puerto en el firewall de tu PC si es necesario. En Cloud se utiliza directamente la URL HTTPS de la app, sin instalar nada en el celular.
-
-## Qué incluye
-
-- Menú industrial animado, nueva partida con nombre, dos dificultades, continuar, estadísticas, configuración y créditos.
-- Mapa de prueba: sala inicial, pasillo, arena, terminal QC, M.A.D., Secure Cache, puerta y fin de turno.
-- Raycasting, colisiones, movimiento rápido sin salto, controles de ocho direcciones y giro horizontal.
-- Worker-01 cuerpo a cuerpo, Crawler rápido y Rivet con proyectiles esquivables. La IA adquiere objetivos por línea de visión y busca su última posición cuando la pierde.
-- Pistola y escopeta de corredera de ocho cartuchos, recarga manual/automática al intentar disparar vacío, munición de reserva y selector de arma.
-- Botiquines, armadura, munición y cartuchos. La armadura absorbe hasta la mitad del daño mientras tenga carga.
-- HUD con rostro procedural, cinco rangos de daño y estados de daño/concentración/recogida/mejora.
-- Hologramas con opción múltiple y teclado interno de enteros, decimales y fracciones; también se admite teclado físico.
-- Preguntas de conversión, equivalencia, simplificación, numerador/denominador, tolerancias e instrumentos.
-- Puerta con reintentos ilimitados; una mejora real por arma y un solo uso por cada dron M.A.D.; no se consume si no hay mejora válida.
-- Tres checkpoints, muerte/reinicio, resumen final, puntuación, guardado local y exportación/importación JSON.
-- Sonidos sintetizados originales, sin música ni assets comerciales.
-
-## Primera partida sugerida
-
-1. Inicia en CLÁSICO. El practicante llega a DDI para trabajar en Quality Control y encuentra el caos de The Converter.
-2. Explora la sala: la terminal verde entrega munición al calibrarla; la escopeta y la armadura están en el lado sur. No es obligatorio responder para empezar a combatir.
-3. Cruza el pasillo hacia la arena. Se guarda el checkpoint antes de entrar si la zona y el respawn están seguros.
-4. Usa cobertura contra Rivet. Los tres tipos se distinguen por forma/color y comportamiento.
-5. El M.A.D. azul, al norte de la arena, permite elegir una de tus armas y mejorarla al resolver una calibración. Un error no consume el dron. Las estaciones normales exigen que no haya una amenaza cercana con línea de visión.
-6. La estación morada al noreste es un Secure Cache opcional: +35 vida y +24 balas, y cuenta como un secreto.
-7. Elimina a todos los enemigos; antes del acceso final se registra otro checkpoint.
-8. Calibra la puerta ámbar al este y entra a la sala final. Interactúa con FIN DE TURNO para ver MISSION COMPLETE.
+Abre `http://IP_LOCAL_DE_TU_PC:8501` y permite el puerto en el firewall si corresponde. En Community Cloud basta su URL HTTPS y el móvil horizontal.
 
 ## Controles
 
@@ -138,74 +92,33 @@ No hay salto ni botón de correr. La velocidad base ya es rápida. El pad, la c�
 
 En Configuración puedes ajustar sensibilidad, sonido, minimapa y resolución reducida. El teclado holográfico incluye `/`, signo negativo, borrar y limpiar, además de los dígitos y el punto. No depende del teclado nativo para las respuestas matemáticas. El nombre sí usa un campo de texto normal.
 
-## CLÁSICO y DOOM
-
-| Regla v0.1 | CLÁSICO | DOOM |
-|---|---:|---:|
-| Enemigos | 3 | 6 |
-| Multiplicador velocidad enemiga | 0.75 | 1.12 |
-| Daño base por ataque | 8 | 14 |
-| Intervalo de ataque | 1.70 s | 1.05 s |
-| Cantidad de recursos en mapa | 100% | 55%, redondeada |
-| Reserva inicial de pistola | 48 | 24 |
-| Reserva al recoger escopeta | 12 | 6 |
-| Respuesta manual entre preguntas numéricas | 15% | 55% |
-| Denominadores | Hasta 8, luego 16 tras dos aciertos | Hasta 16 |
-
-La vida de cada tipo de enemigo es igual en ambos modos. Las preguntas de teoría usan opciones. La mezcla del generador es aproximadamente 70% conversiones/equivalencias/simplificación, 20% teoría aplicada y 10% identificación de denominador. Son probabilidades por pregunta; una partida pequeña no tiene por qué reproducir esos porcentajes exactamente.
-
-## Arquitectura y responsabilidades
-
-| Archivo / carpeta | Función |
-|---|---|
-| `app.py` | Arranque de Streamlit, `session_state`, entrega de eventos al motor |
-| `game/engine.py` | Nueva partida, preguntas, respuestas, mejoras, checkpoint y finalización |
-| `game/conversiones.py` | Parseo seguro y comparación exacta con `fractions.Fraction` |
-| `game/preguntas.py` | Generación de preguntas, respuestas privadas y explicaciones |
-| `game/dificultad.py` | Balance de dificultades |
-| `game/armas.py`, `enemigos.py`, `mejoras.py` | Catálogos y reglas extensibles |
-| `game/nivel.py` | Registro y datos de niveles; encuentros explícitos por dificultad |
-| `game/world.py` | Condiciones, progreso, seguridad, pickups y recompensas transaccionales |
-| `game/estadisticas.py`, `puntuacion.py` | Métricas y cálculo de puntuación |
-| `game/save_system.py` | Formato de guardado versionado, validación y restauración |
-| `game/reporte.py` | Modelo inicial del futuro reporte de estadías |
-| `game/roadmap.py` | Metadatos futuros: niveles, Project U.T.C.J., El Toro y escudos |
-| `ui/game_component.py` | Componente bidireccional, servido desde archivos locales |
-| `ui/frontend/bridge.js` | Protocolo Streamlit v1, IDs, confirmación y reintento |
-| `ui/frontend/game.js` | Menús, HUD, hologramas y almacenamiento del navegador |
-| `ui/frontend/realtime.js` | Física, combate, IA, recogidas y telemetría |
-| `ui/frontend/controls.js` | Entradas táctiles/PC y bucle de animación |
-| `ui/frontend/renderer.js` | Raycasting, sprites procedurales, armas y rostro |
-| `ui/frontend/style.css` | Diseño responsive del juego y paneles |
-| `tests/` | Pruebas unitarias e integración en navegador |
-| `assets/` | Espacios reservados para sprites, armas, HUD, sonido y música |
-
-Python conserva las respuestas correctas hasta la evaluación. JavaScript recibe el enunciado/opciones, presenta la pregunta y envía la respuesta; no decide si es correcta. Python controla progreso educativo, uso de estaciones, mejoras, puntuación y validación del save.
-
-El navegador calcula cada frame: movimiento, colisiones, disparos, daño inmediato, IA y recogidas. Sus parámetros proceden de Python. Envía snapshots cada 10 segundos y en eventos relevantes; cambios de pickups, combate u objetivos/zonas pendientes se agrupan para confirmar progreso sin peticiones por frame. El FPS no hace una petición por frame ni reinicia el Canvas en cada rerun de Streamlit. El tiempo registrado excluye pausa y hologramas.
-
-Los eventos tienen IDs y una caché de respuestas para evitar aplicar dos veces una respuesta retransmitida. Una interrupción de red prolongada presenta un aviso y permite reintentar el mismo evento. Para mantener la sencillez, solo se envía una solicitud a la vez; si pulsas una estación durante una sincronización, aparecerá un aviso para intentar de nuevo.
-
-**Límite de autoridad:** se confía en la telemetría de combate del navegador. Esta versión es un juego académico para un jugador, no un sistema competitivo con antitrampas. Los guardados son editables. La validación comprueba estructura/rangos y no demuestra que el usuario haya jugado legítimamente.
-
 ## Guardado y checkpoints
 
-- Un slot en `localStorage` del navegador bajo `fraction-slayer-save`, con esquema `version: 2`. Saves antiguos/incompatibles se rechazan con un mensaje; no se migran automáticamente.
-- Contiene `level_id`, revisión, identidad de partida, nombre, dificultad, posición, vida, armadura, enemigos/activación, objetos, inventario, armas, mejoras, progreso por ID y estadísticas; además, una copia del último checkpoint.
-- Python mantiene la partida y las estadísticas en `st.session_state` durante la sesión.
-- El navegador conserva los saves confirmados por Python. La sincronización automática es cada 10 segundos y también ocurre al pausar, contestar, crear checkpoints y terminar.
-- CONTINUAR carga el último snapshot confirmado. REINICIAR CHECKPOINT restaura el mundo, recursos y estadísticas de ese checkpoint; el intento posterior descartado no suma a la puntuación. Se aplica HP mínimo de 50, mínimo total de 12 balas de pistola / 4 cartuchos por arma poseída y 2.5 s de gracia; estos pisos son datos del nivel y no se aplican durante gameplay normal.
-- Reiniciar también elimina proyectiles transitorios. No se conserva una recarga en curso.
-- Pausa → Configuración / Guardado → EXPORTAR JSON descarga una copia portátil. IMPORTAR JSON la valida en Python y reemplaza el slot si es válida.
-- El guardado no utiliza archivos compartidos del servidor ni depende de su disco. No comparte partidas entre usuarios.
-- Borrar datos del sitio, usar incógnito, cambiar dominio o cambiar navegador puede eliminar/ocultar el slot. Exporta JSON para transferirlo o respaldarlo. Algunos navegadores bloquean almacenamiento en iframes; se muestra aviso y sigue disponible la exportación durante la sesión.
-- Si el servidor pierde `session_state`, el cliente intenta restaurar el slot automáticamente y sincronizar su snapshot actual; muestra “Sesión restaurada”. Una pregunta pendiente se vuelve a emitir con un ID nuevo. Si no existe un save compatible, vuelve al menú con un mensaje claro. Tras recargar la página, CONTINUAR recupera el último save confirmado.
+Un slot local, exportable/importable en Configuración. **SAVE_VERSION = 2** se conserva: los saves de `industrial_test` de la estable siguen cargando; v1, revisiones incompatibles o datos corruptos se rechazan con un mensaje y permiten partida nueva. Workshop tiene su propio `level_id`, revisión y progreso; nunca mezcla checkpoints de niveles distintos.
 
-Para persistencia entre dispositivos, `make_save` y `load_save` son el punto de integración de un repositorio remoto por usuario. Una futura versión puede incorporar autenticación y almacenamiento durable sin cambiar el contenido de preguntas ni el renderer. No se ha agregado una base de datos en v0.1.
+Se guardan inventario/fusible, objetivos, estaciones por ID, oleadas y tiempos de triggers, estado/fase del Loader, secretos, mejoras y estadísticas. Los cuatro checkpoints son Reception, Calibration tras Assembly, fusible recuperado tras la emboscada y antes del Loader. Se rechazan checkpoints muertos o inseguros; al reiniciar hay mínimo 50 HP, munición y 2.5 s de gracia. Se restaura el progreso del checkpoint, no los eventos posteriores a él.
 
-## Puntuación
+Python usa `session_state`; el navegador conserva `fraction-slayer-save` y las preferencias. Una sesión de Streamlit perdida intenta restauración limitada desde ese slot. No depende del disco efímero de Community Cloud. Borrar datos del navegador o cambiar de dispositivo requiere importar el JSON exportado. Nueva Partida reemplaza el único slot.
 
-`100 × enemigos + 150 × aciertos + 25 × mejor racha + 200 × secretos + bonus de precisión − 20 × errores`, con mínimo cero. El bonus de precisión es hasta 300 puntos. La precisión incluye todas las calibraciones, también teoría aplicada. Las estadísticas mostradas en el menú corresponden al último registro confirmado, no a un historial de múltiples partidas.
+## Archivos principales
+
+| Archivo | Responsabilidad |
+|---|---|
+| `app.py` | Arranque Streamlit y entrega de eventos, sin cambios |
+| `game/workshop.py` | Grid, zonas, encuentros, estaciones, objetivos, gates y recursos del nuevo nivel |
+| `game/nivel.py` | Registro de niveles y composición por dificultad |
+| `game/engine.py`, `world.py` | Reglas autoritativas, transacciones, instalación del fusible, checkpoints y eventos |
+| `game/preguntas.py`, `conversiones.py` | Validación educativa existente, sin cambios |
+| `game/save_system.py` | Save v2, fases del boss y tiempos de eventos opcionales |
+| `ui/frontend/loader.js` | Ataques y feedback del Loader; no decide recompensas ni progreso |
+| `ui/frontend/realtime.js` | Combate, movimiento y sincronización |
+| `ui/frontend/game.js`, `renderer.js` | Menús/hologramas, mapa, sprites procedurales y HUD |
+| `ui/frontend/controls.js`, `bridge.js` | Controles/diagnóstico y protocolo Streamlit, sin cambios |
+| `tests/test_workshop.py`, `browser_workshop.py`, `workshop_driver.js` | Reglas, gates y recorrido de Workshop contra Streamlit real |
+
+Se mantiene el límite original de confianza: combate y posiciones del cliente son telemetría de un juego de un jugador; no hay antitrampas competitivo. Python decide las respuestas, recompensas, estaciones, oleadas, scoring y validación del save.
+
+Se conserva **ERROR DE MOTOR**, `COPIAR ERROR`, stack/etapa/contexto y `DEBUG_ENGINE_ERRORS=true` en `controls.js`. Los errores no se ocultan. Python registra eventos y excepciones sin imprimir saves ni respuestas; sync exitoso como máximo cada 30 segundos por sesión.
 
 ## Subir a GitHub
 
@@ -218,7 +131,7 @@ Opción con Git, desde la carpeta del proyecto:
 ```bash
 git init
 git add .
-git commit -m "Fraction Slayer v0.1.1: controles móviles"
+git commit -m "Fraction Slayer v0.2-alpha2: The Workshop"
 git branch -M main
 git remote add origin https://github.com/TU_USUARIO/fraction-slayer.git
 git push -u origin main
@@ -243,36 +156,28 @@ El proyecto se entrega preparado; no se ha creado ni publicado un repositorio o 
 
 ## Pruebas
 
-Solo reglas Python:
-
-```bash
-python -m pip install pytest==9.0.2
-python -m pytest -q
-```
-
-Integración visual opcional:
-
 ```bash
 python -m pip install -r requirements-dev.txt
+python -m pytest -q
 python -m playwright install chromium --only-shell
+python tests/browser_workshop.py
+python tests/browser_workshop_feedback.py
+python tests/browser_startup.py
 python tests/browser_smoke.py
+python tests/browser_smoke.py --doom
 python tests/mobile_controls.py
 python tests/pc_controls.py
 python tests/browser_engine.py
 ```
 
-En Linux sin bibliotecas de navegador, Playwright puede requerir `python -m playwright install-deps chromium`. Esto solo es para el entorno de desarrollo/pruebas, no para Streamlit Cloud.
+Cada script de navegador levanta y termina su propia instancia **real** de Streamlit y genera evidencias en `test-results/`. En Linux pueden hacer falta dependencias del sistema: `python -m playwright install-deps chromium`. Es desarrollo, no un requisito para el servidor Cloud. `CHROME_PATH` permite un Chromium compatible instalado.
 
-El script levanta su propio Streamlit temporal, comprueba escritorio y móvil emulado, y guarda capturas en `test-results/`. Emplea posiciones controladas para llegar a cada sistema y una preparación de estado para terminar el mapa; no sustituye una partida completa de balance ni pruebas en un teléfono físico. Se puede usar `CHROME_PATH` para indicar un ejecutable Chromium compatible existente. Consulta `VALIDACION.md` para los resultados de esta entrega.
+El recorrido Workshop usa colisiones, disparos, munición, recarga y RPC reales, con navegación acelerada y gracia renovada solo desde el test. Prueba funcionalidad, no balance sin protección. Los ataques del Loader se comprueban por separado sin gracia. Las suites anteriores siguen usando Industrial Test explícitamente. Resultados, fallos corregidos y alcance: **VALIDACION.md** y **CAMBIOS_V0.2-alpha2.md**.
 
-## Límites de v0.2-alpha1 y siguiente paso
+## Límites y siguiente paso
 
-Un mapa de validación y sprites procedurales sencillos; IA sin búsqueda de rutas compleja; no hay música, cinemáticas, lectura gráfica de regla, navegación vertical ni multijugador. La escopeta usa un cono de daño simplificado, y la recarga repone el tubo en una sola animación temporal, sin inserción cartucho por cartucho. Las caras son dibujos geométricos reemplazables.
+Sprites geométricos, IA sin pathfinding global, sin música/assets finales, sin navegación vertical. El núcleo trasero es angular, no una hitbox 3D. Se omite el terminal opcional de teoría para mantener cinco calibraciones. No se implementan Factory, niveles posteriores, El Toro ni emblemas 2/4–4/4. El reporte de estadías conserva su modelo y registros mínimos.
 
-El banco de teoría es pequeño. Solo hay MOD I real para cada arma, aunque los catálogos admiten cuatro niveles. Las preguntas alcanzan MOD II matemático; no hay un árbol de dificultad adaptativa. Las animaciones de concentración/mejora son muy básicas. El reporte de estadías contiene el modelo y registros mínimos, no un documento exportable.
+Falta jugar Workshop sin protección en Android/iPhone físicos para medir dificultad, duración 8–12 minutos, FPS, claridad de orientación y ergonomía del boss. Los controles tienen regresiones Chromium emuladas; Safari físico y sus barras/notch/haptics necesitan prueba real. No se ha publicado en una cuenta de Cloud/GitHub.
 
-El juego necesita conexión para consultar Python y guardar confirmaciones. Al perder conexión, los frames pueden continuar hasta detectarse una solicitud pendiente; después se pausa con aviso. No es una PWA offline. Rendimiento y comodidad final deben medirse en Android/iPhone reales. Pantalla completa y captura del mouse dependen del navegador.
-
-**Siguiente paso recomendado:** diseñar el contrato de The Workshop sobre esta base (objetivos, gates, encuentros y estaciones con denominadores 2/4/8), verificar alcanzabilidad y recursos mínimos con tests, y validar en iPhone Safari/Android físicos antes de construir el nivel completo. La máquina de estados y los ataques de Loader siguen pendientes; solo están preparados los campos y primitivas del motor.
-
-Preparado para expandirse con The Workshop, The Factory, The Laboratory, The Foundry y The Converter. Los catálogos reservan armas futuras; el reporte dispone de `project_utcj` para los cuatro logos. El Toro, Bull Core, el desbloqueo 4/4 y los escudos del jefe todavía no se implementan. Un escudo futuro puede reutilizar los eventos de pregunta/respuesta y aplicar un efecto de progreso como hoy lo hace la puerta.
+**Siguiente paso:** playtest físico de esta alpha, registrar tiempo, muertes, munición al entrar al Loader y preguntas utilizadas; ajustar datos de encuentros/recursos antes de añadir The Factory.

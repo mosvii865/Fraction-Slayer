@@ -100,6 +100,9 @@ class GameEngine:
                     "stun_time",
                 ):
                     enemy[key] = deepcopy(incoming[key])
+                if enemy["type"] == "loader":
+                    for key in ("phase_time", "attack_index", "cooldown"):
+                        enemy[key] = deepcopy(incoming.get(key, 0))
         for key in ("seconds", "damage", "ammo_used"):
             s["stats"][key] = max(s["stats"][key], snapshot["stats"][key])
         s["stats"]["kills"] = sum(e["hp"] <= 0 for e in s["enemies"])
@@ -123,7 +126,7 @@ class GameEngine:
             stats={
                 **summary(self.state["stats"]),
                 "utcj_found": len(self.state["progress"]["utcj_found"]),
-                "utcj_display": len(self.state["progress"]["utcj_found"]) or "???",
+                "utcj_display": (f'{len(self.state["progress"]["utcj_found"])}/{self.level()["campaign_secrets"]}' if self.level().get("campaign_secrets") else len(self.state["progress"]["utcj_found"])) if self.state["progress"]["utcj_found"] else "???",
             },
             save=make_save(self.state, self.checkpoint),
             **extra
@@ -155,7 +158,7 @@ class GameEngine:
             }
         action=event.get('action')
         now=time.monotonic()
-        if result.get('code')=='NEED_SESSION' or (not result.get('error') and action in ('new','load','sync','checkpoint','question','answer','finish') and (action!='sync' or now-self._last_sync_log>=30)):
+        if result.get('code')=='NEED_SESSION' or (not result.get('error') and action in ('new','load','sync','checkpoint','question','answer','interact','finish') and (action!='sync' or now-self._last_sync_log>=30)):
             LOGGER.info('action=%s level_id=%s checkpoint=%s save_version=%s code=%s',action,
                 (self.state or {}).get('level_id'),(self.state or {}).get('checkpoint'),SAVE_VERSION,result.get('code','OK'))
             if action=='sync': self._last_sync_log=now
@@ -187,9 +190,7 @@ class GameEngine:
                     grace=0
                 ),
                 weapon="pistol",
-                weapons={
-                    "pistol": dict(loaded=12, reserve=cfg["pistol_reserve"], mods=0)
-                },
+                weapons=deepcopy(level.get("initial_loadout", {"pistol": dict(loaded=12, reserve=cfg["pistol_reserve"], mods=0)})),
                 enemies=level["enemies"],
                 collected=[],
                 inventory={"quest_items": {}, "key_items": {}},
@@ -214,12 +215,12 @@ class GameEngine:
         self.sync(data.get("snapshot"))
         level = self.level()
         self.state = advance(self.state, level)
-        if action == "question":
+        if action in ("question", "interact"):
             station = entity(level, "stations", data["station"])
             weapon = data.get("weapon", "pistol")
             p = self.state["player"]
             point = station["interaction_point"]
-            if station["kind"] == "exit":
+            if station["kind"] == "exit" or (station["kind"] == "install") != (action == "interact"):
                 raise ValueError("Esta estación no tiene calibración")
             if math.hypot(p["x"] - point["x"], p["y"] - point["y"]) > station[
                 "interaction_distance"
@@ -235,6 +236,11 @@ class GameEngine:
                 raise ValueError(
                     "No hay arma mejorable. M.A.D. disponible para después."
                 )
+            if action == "interact":
+                candidate = rewards(self.state, level, station["reward"])
+                candidate["progress"]["stations"][station["id"]] = True
+                self.state = validate_state(advance(candidate, level, event="station:" + station["id"]))
+                return self.pack(kind="interaction")
             # Preflight now, and again at commit, without consuming anything.
             rewards(self.state, level, station["reward"], weapon)
             self.question = generate_question(
@@ -283,7 +289,8 @@ class GameEngine:
             cp = entity(level, "checkpoints", data["checkpoint"])
             current = entity(level, "checkpoints", self.state["checkpoint"])
             if (
-                cp["order"] <= current["order"]
+                self.state["player"]["hp"] <= 0
+                or cp["order"] <= current["order"]
                 or not in_zone(self.state["player"], cp["zone"])
                 or not condition(cp["prerequisites"], self.state, level)
             ):
@@ -326,6 +333,7 @@ class GameEngine:
                     "Completa los objetivos del nivel y acércate a la salida"
                 )
             self.state["progress"]["complete"] = True
+            self.state = validate_state(advance(self.state, level))
             return self.pack(kind="finish")
         if action in ("sync", "pause", "menu"):
             return self.pack(kind=action)

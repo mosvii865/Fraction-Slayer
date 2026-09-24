@@ -62,6 +62,18 @@ def condition(rule, state, level, event=None):
     ]:
         if key in rule:
             return state["progress"][collection].get(rule[key], False)
+    if "collected" in rule:
+        return rule["collected"] in state["collected"]
+    if "complete" in rule:
+        return state["progress"]["complete"] == rule["complete"]
+    if "enemy_hp_below" in rule:
+        r = rule["enemy_hp_below"]
+        e = next((e for e in state["enemies"] if e["id"] == r["id"]), None)
+        return bool(e and e["active"] and 0 <= e["hp"] <= level["enemy_types"][e["type"]]["hp"] * r["ratio"])
+    if "trigger_elapsed" in rule:
+        r = rule["trigger_elapsed"]
+        start = state["progress"].get("trigger_times", {}).get(r["id"])
+        return start is not None and state["stats"]["seconds"] - start >= r["seconds"]
     if "item" in rule:
         return any(bag.get(rule["item"], 0) > 0 for bag in state["inventory"].values())
     if "group_defeated" in rule:
@@ -126,7 +138,7 @@ def pickup(state, item, level):
         elif w not in state["weapons"]:
             state["weapons"][w] = dict(
                 loaded=WEAPONS[w]["capacity"],
-                reserve=get_difficulty(state["difficulty"]).get(w + "_reserve", 0),
+                reserve=item.get("reserve", get_difficulty(state["difficulty"]).get(w + "_reserve", 0)),
                 mods=0,
             )
     elif t in ("health", "armor"):
@@ -221,6 +233,7 @@ def advance(state, level, event=None):
                             enemy["active"] = True
                 else:
                     state = rewards(state, level, [action])
+            state["progress"].setdefault("trigger_times", {})[trigger["id"]] = state["stats"]["seconds"]
             state["progress"]["triggers"][trigger["id"]] = True
             changed = True
         if not changed:

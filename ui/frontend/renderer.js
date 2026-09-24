@@ -11,6 +11,7 @@ const Render = (() => {
     H = 360,
     zbuf = new Float32Array(W);
   const palette = {
+    loader: "#e4a445", install: "#72d7cb", utcj:"#e9c768", quest_item:"#84ecdf",
     worker: "#c89a4d",
     crawler: "#89af54",
     rivet: "#b55d50",
@@ -35,7 +36,21 @@ const Render = (() => {
     const color = palette[type] || "#fff";
     g.fillStyle = "#050b10";
     g.fillRect(7, 59, 34, 4);
-    if (["worker", "rivet", "crawler"].includes(type)) {
+    if (type.startsWith('loader')) {
+      g.fillStyle='#263b43';g.fillRect(4,40,12,23);g.fillRect(32,40,12,23);
+      g.fillStyle=type==='loader_stunned'?'#76dced':type==='loader_warning'?'#ff7150':'#dda54b';
+      g.fillRect(4,17,40,31);g.fillRect(1,31,7,20);g.fillRect(40,31,7,20);
+      g.fillStyle='#182d35';g.fillRect(13,22,23,18);
+      g.fillStyle=type==='loader_rear'?'#76edc6':'#e95c39';g.fillRect(17,27,15,9);
+      g.fillStyle='#c7d2c2';g.fillRect(12,8,24,10);g.fillRect(2,53,15,6);g.fillRect(31,53,15,6);
+    } else if (type==='utcj') {
+      g.fillStyle='#dbc777';g.strokeStyle='#dbc777';g.lineWidth=2;g.strokeRect(4,15,40,35);
+      g.font='bold 12px monospace';g.textAlign='center';g.fillText('UTCJ',24,34);
+      g.font='8px monospace';g.fillText('PROJECT',24,45);
+    } else if (type==='quest_item') {
+      g.fillStyle='#bdece4';g.fillRect(17,27,15,31);g.fillStyle='#315c61';g.fillRect(20,33,9,18);
+      g.fillStyle='#dba64e';g.fillRect(16,26,17,6);g.fillRect(16,54,17,6);
+    } else if (["worker", "rivet", "crawler"].includes(type)) {
       if (type === "crawler") {
         g.fillStyle = color;
         g.fillRect(8, 37, 33, 17);
@@ -75,7 +90,7 @@ const Render = (() => {
           g.fillRect(43, 35, 5, 7);
         }
       }
-    } else if (["terminal", "mad", "cache", "exit"].includes(type)) {
+    } else if (["terminal", "mad", "cache", "exit", "install"].includes(type)) {
       g.fillStyle = "#273946";
       g.fillRect(10, 48, 29, 13);
       g.fillRect(20, 34, 9, 20);
@@ -96,7 +111,7 @@ const Render = (() => {
         "EXIT" :
         type === "cache" ?
         "QC+" :
-        "QC",
+        type === "install" ? "POWER" : "QC",
         24,
         25,
       );
@@ -194,7 +209,7 @@ const Render = (() => {
       plane = 0.64;
     let g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, "#0b1821");
-    g.addColorStop(0.5, "#29383c");
+    g.addColorStop(0.5, s.progress.objectives.power_restored ? "#3e5552" : "#29383c");
     g.addColorStop(0.501, "#272e2e");
     g.addColorStop(1, "#111b22");
     ctx.fillStyle = g;
@@ -293,12 +308,17 @@ const Render = (() => {
       if (depth < 0.12) continue;
       const sideways = -ox * dy + oy * dx;
       const center = (W / 2) * (1 + sideways / (plane * depth));
-      const sh = (H / depth) * (o.type === "crawler" ? 0.85 : 1),
+      const sh = (H / depth) * (o.type === "loader" ? 1.4 : o.type === "crawler" ? 0.85 : 1),
         sw = sh * 0.75;
       let top = H / 2 - sh / 2;
       if (["pistol", "shells", "health", "armor", "shotgun"].includes(o.type))
         top += sh * 0.03;
-      const img = sprite(o.type);
+      let visual=o.type;
+      if (o.type==='loader') {
+        const a=Math.atan2(p.y-o.y,p.x-o.x)-o.facing;
+        visual=o.stun_time>0?'loader_stunned':['preparing','slamming'].includes(o.charge_state)?'loader_warning':Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))>Math.PI-1?'loader_rear':'loader';
+      }
+      const img = sprite(visual);
       for (
         let col = Math.max(0, Math.floor(center - sw / 2)); col < Math.min(W, center + sw / 2); col++
       ) {
@@ -398,6 +418,12 @@ const Render = (() => {
     for (const st of fs.config.level.stations) {
       ctx.fillStyle = palette[st.kind] || "#83ddea";
       ctx.fillRect(ox + st.x * k - 1, oy + st.y * k - 1, 2, 2);
+    }
+    const destination=fs.config.level.navigation?.find(n=>!fs.state.progress.objectives[n.until]);
+    if(destination) {
+      ctx.strokeStyle='#f6c46c';ctx.lineWidth=1;ctx.beginPath();
+      ctx.moveTo(ox+destination.x*k,oy+destination.y*k-3);ctx.lineTo(ox+destination.x*k+3,oy+destination.y*k);
+      ctx.lineTo(ox+destination.x*k,oy+destination.y*k+3);ctx.lineTo(ox+destination.x*k-3,oy+destination.y*k);ctx.closePath();ctx.stroke();
     }
     ctx.fillStyle = "#fff";
     ctx.fillRect(ox + p.x * k - 1, oy + p.y * k - 1, 3, 3);

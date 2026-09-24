@@ -1,4 +1,6 @@
-"""Design metadata only. None of this content is unlocked in v0.1."""
+"""Campaign metadata. Workshop and its first mark ship in alpha2; later rewards remain locked."""
+
+IMPLEMENTED_LEVELS = ["The Workshop"]
 
 FUTURE_LEVELS = [
     "The Workshop",
