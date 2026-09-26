@@ -228,23 +228,34 @@ const InputControls = (window.InputControls = (() => {
   });
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) document.addEventListener(type, finish);
 
-  function actionButton(element, action, role = 'button') {
+  function actionButton(element, action, role = 'button', activation = 'down') {
     element.addEventListener('pointerdown', e => {
       if (element.disabled) return;
       const p = claim(e, role, element);
       if (!p) return;
       if (role === 'fire') refreshFire();
-      action();
+      if (activation === 'down') action(e);
     });
-    // Keyboard / assistive activation has detail=0. Physical pointers act on down.
+    // Modal-opening interactions activate on release. This prevents the same
+    // touch that opened a synchronous overlay (notably M.A.D.) from being
+    // retargeted to a newly-created modal button on mobile browsers.
+    if (activation === 'up') element.addEventListener('pointerup', e => {
+      const p = active.get(e.pointerId);
+      if (!p || p.element !== element || p.role !== role || element.disabled) return;
+      e.preventDefault();
+      e.stopPropagation();
+      action(e);
+    });
+    // Keyboard / assistive activation has detail=0. Physical pointers are
+    // already handled by pointerdown/pointerup above.
     element.addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
-      if (e.detail === 0 && canPlay() && !element.disabled) action();
+      if (e.detail === 0 && canPlay() && !element.disabled) action(e);
     });
   }
   actionButton($('#fire'), shoot, 'fire');
-  actionButton($('#interact'), interact);
+  actionButton($('#interact'), interact, 'button', 'up');
   actionButton($('#reload-touch'), reload);
   actionButton($('#reload'), reload);
   actionButton($('#weapon-toggle'), togglePicker);

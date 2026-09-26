@@ -290,3 +290,17 @@ def test_map_reachability():
         (int(i["x"]), int(i["y"])) in visited
         for i in level["items"] + level["stations"] + level["enemies"]
     )
+
+
+def test_mobile_interact_activates_on_pointer_release_for_modal_safety():
+    """M.A.D. opens synchronously; mobile interact must wait for pointerup.
+
+    If it fires on pointerdown, freeze()/releaseInput() can release pointer capture
+    while the finger is still down and some mobile browsers retarget the release/
+    compatibility click to the newly-created modal, immediately dismissing it.
+    """
+    from pathlib import Path
+    src = (Path(__file__).resolve().parents[1] / "ui" / "frontend" / "controls.js").read_text()
+    assert "function actionButton(element, action, role = 'button', activation = 'down')" in src
+    assert "if (activation === 'up') element.addEventListener('pointerup'" in src
+    assert "actionButton($('#interact'), interact, 'button', 'up');" in src
