@@ -68,11 +68,18 @@ def main():
                         f.evaluate('(a)=>walkTest.batch([a.x,a.y],a.groups,true)',dict(x=e['x'],y=e['y'],groups=list(groups)));sync()
                     else:raise AssertionError(('combat stuck',groups,es,f.evaluate('FS.state.weapons')))
                     ok(diff+': encounter '+','.join(groups))
-                def question(ident,answer,weapon='pistol',wrong=False):
+                workshop_answers={
+                    'Convierte 1/2″ a decimal.':'.5','¿Qué decimal equivale a 1/4″?':'.25','Una medida de 3/4″ equivale a…':'.75',
+                    'Convierte 3/4″ a decimal.':'.75','¿Qué decimal equivale a 5/8″?':'.625','Convierte 1/8″ a decimal.':'.125',
+                    'Convierte .375″ a fracción simplificada.':'3/8','Convierte .625″ a fracción simplificada.':'5/8','¿Qué fracción equivale a .25″?':'1/4',
+                    'Convierte 7/8″ a decimal.':'.875','En la fracción 3/8, ¿cuál es el denominador?':'8',
+                    '¿Qué decimal equivale a 3/8″?':'.375','En la fracción 5/8, ¿cuál es el denominador?':'8',
+                }
+                def question(ident,answer=None,weapon='pistol',wrong=False):
                     f.wait_for_function('!Bridge.busy');f.evaluate('(a)=>ask(a.id,a.weapon)',dict(id=ident,weapon=weapon));f.wait_for_function('modalQuestion!==null')
                     if wrong:
                         f.evaluate('submitAnswer("999")');f.locator('#again').wait_for();assert 'CALIBRATION ERROR' in f.locator('#overlay').inner_text();f.locator('#again').click();f.wait_for_function('modalQuestion!==null')
-                    q=f.evaluate('modalQuestion')
+                    q=f.evaluate('modalQuestion');answer=answer or workshop_answers[q['prompt']]
                     if q['mode']=='manual':
                         for ch in answer:f.locator(f'[data-key="{ch}"]').click()
                         f.locator('#confirm').click()
@@ -82,21 +89,21 @@ def main():
                     f.locator('#return').wait_for();assert 'CALIBRATION ERROR' not in f.locator('#overlay').inner_text()
                     f.locator('#return').click();f.evaluate('freeze()');f.wait_for_function('!Bridge.busy')
                 travel(6,5.5);clear('welcome');travel(2.5,14.5)
-                question('tool_storage_terminal','.50',wrong=True)
+                question('tool_storage_terminal',wrong=True)
                 travel(12.5,5.5);travel(14.5,6.5);sync()
                 assert f.evaluate('FS.state.enemies.some(e=>e.group==="assembly_first" && e.active && e.hp>0)'), 'Shotgun pickup occurs during first wave'
                 clear('assembly_first','assembly_second')
                 assert f.evaluate('FS.state.weapons.shotgun.loaded+FS.state.weapons.shotgun.reserve')>0
                 travel(27.5,5.5);f.evaluate('checkpoint("calibration")');f.wait_for_function('!Bridge.busy');assert f.evaluate('FS.state.checkpoint')=='calibration'
-                question('mad_calibration_01','.75','shotgun')
+                question('mad_calibration_01',weapon='shotgun')
                 assert f.evaluate('FS.state.weapons.shotgun.mods')==1
                 travel(28.5,11.5);clear('maintenance');travel(30.5,16.5);travel(26.5,16.5)
                 if diff=='clasico':
                     travel(20.5,15.5);f.evaluate('FS.playing=true;FS.state.player.angle=Math.PI;selectWeapon("pistol");FS.cooldown=0;shoot();FS.playing=false');sync()
                     assert f.evaluate('FS.state.progress.utcj_found.length')==1
-                travel(20.5,16.5);question('mad_secret_01','.875','pistol')
+                travel(20.5,16.5);question('mad_secret_01',weapon='pistol')
                 assert f.evaluate('FS.state.weapons.pistol.mods')==1
-                travel(39.5,10.5);question('power_door_terminal','3/8');travel(39.5,4.5);sync()
+                travel(39.5,10.5);question('power_door_terminal');travel(39.5,4.5);sync()
                 assert f.evaluate('FS.state.inventory.quest_items.main_power_fuse')==1
                 # Real enemy proximity denies the normal door terminal during the ambush.
                 travel(39.5,11.5)
@@ -104,7 +111,7 @@ def main():
                 assert blocked=='AREA NOT SECURE',blocked
                 clear('fuse_ambush');travel(39.5,14.5)
                 f.evaluate('checkpoint("fuse_recovered")');f.wait_for_function('!Bridge.busy');assert f.evaluate('FS.state.checkpoint')=='fuse_recovered'
-                travel(42.5,14.5);question('secure_cache_01','.625')
+                travel(42.5,14.5);question('secure_cache_01')
                 # Save/reload through real localStorage and a new Streamlit session.
                 sync();page.reload();page.locator('iframe').first.wait_for();f=page.locator('iframe').first.element_handle().content_frame();f.locator('#continue').click();f.wait_for_function('FS.playing&&!Bridge.busy');f.evaluate('freeze()');f.evaluate((ROOT/'tests/workshop_driver.js').read_text())
                 assert f.evaluate('FS.state.inventory.quest_items.main_power_fuse')==1

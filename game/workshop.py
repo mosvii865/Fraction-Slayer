@@ -72,28 +72,58 @@ def workshop():
     item('doom_pistol','ammo',35.5,18.5,12,weapon='pistol',difficulties=['doom'])
     item('doom_shells','ammo',32.5,21.5,4,weapon='shotgun',difficulties=['doom'])
 
-    def question(prompt, answer, choices, category='to_decimal', manual=False):
-        return dict(categories_allowed=[category], denominators_allowed=[2,4,8],
-            multiple_choice_allowed=not manual, manual_allowed=manual,
-            fixed_question=dict(prompt=prompt, answer=answer, choices=[] if manual else choices,
-                category=category, mode='manual' if manual else 'choice',
-                expected_format='fraction' if category=='to_fraction' else 'decimal',
-                explanation=f'{prompt.replace(" = ?", "")} = {answer}'))
+    def qv(prompt, answer, choices, category='to_decimal', explanation=None):
+        formats = {'to_fraction':'fraction', 'special':'integer', 'theory':'text'}
+        return dict(
+            prompt=prompt, answer=answer, choices=choices, category=category, mode='choice',
+            expected_format=formats.get(category, 'decimal'),
+            explanation=explanation or f'{prompt} Respuesta: {answer}.'
+        )
+    def question_pool(*variants):
+        return dict(
+            categories_allowed=sorted({v['category'] for v in variants}),
+            denominators_allowed=[2,4,8], multiple_choice_allowed=True, manual_allowed=False,
+            fixed_questions=list(variants),
+        )
     def st(i, kind, x, y, label, reward, q=None, **kw):
         return dict(id=i,kind=kind,x=x,y=y,label=label,interaction_point=dict(x=x,y=y),
             interaction_distance=1.7,question=q or {},reward=reward,**kw)
     stations = [
-        st('tool_storage_terminal','terminal',2.5,14.5,'QC / 1/2 → MUNICIÓN',
-           [dict(type='ammo',weapon='pistol',amount=12)], question('1/2" = ?', '.50', ['.25','.50','.75']), reward_label='+12 municiones de pistola'),
+        st('tool_storage_terminal','terminal',2.5,14.5,'QC / CALIBRACIÓN BÁSICA → MUNICIÓN',
+           [dict(type='ammo',weapon='pistol',amount=12)],
+           question_pool(
+               qv('Convierte 1/2″ a decimal.', '.5', ['.25','.5','.75'], 'to_decimal', '1/2″ equivale a .5″.'),
+               qv('¿Qué decimal equivale a 1/4″?', '.25', ['.125','.25','.5'], 'equivalence', '1/4″ equivale a .25″.'),
+               qv('Una medida de 3/4″ equivale a…', '.75', ['.5','.75','.875'], 'equivalence', '3/4″ equivale a .75″.'),
+           ), reward_label='+12 municiones de pistola'),
         st('mad_calibration_01','mad',27.5,5.5,'M.A.D. #1 / CALIBRATION',
-           [dict(type='upgrade',mod=1)], question('3/4" = ?', '.75', ['.25','.50','.75'])),
+           [dict(type='upgrade',mod=1)],
+           question_pool(
+               qv('Convierte 3/4″ a decimal.', '.75', ['.25','.5','.75']),
+               qv('¿Qué decimal equivale a 5/8″?', '.625', ['.375','.625','.875'], 'equivalence'),
+               qv('Convierte 1/8″ a decimal.', '.125', ['.125','.25','.5']),
+           )),
         st('power_door_terminal','door',39.5,9.5,'MAIN POWER FUSE MISSING / ACCESS',
-           [dict(type='door',id='power_door')],question('0.375" = ?', '3/8', ['1/4','3/8','1/2'],'to_fraction'),door_id='power_door'),
+           [dict(type='door',id='power_door')],
+           question_pool(
+               qv('Convierte .375″ a fracción simplificada.', '3/8', ['1/4','3/8','1/2'], 'to_fraction', '.375″ equivale a 3/8″.'),
+               qv('Convierte .625″ a fracción simplificada.', '5/8', ['3/8','5/8','7/8'], 'to_fraction', '.625″ equivale a 5/8″.'),
+               qv('¿Qué fracción equivale a .25″?', '1/4', ['1/8','1/4','1/2'], 'to_fraction', '.25″ equivale a 1/4″.'),
+           ),door_id='power_door'),
         st('secure_cache_01','cache',42.5,14.5,'SECURE CACHE / SHELLS',
            [dict(type='ammo',weapon='shotgun',amount=12),dict(type='secret',id='cache_found')],
-           question('5/8" = ?', '.625', ['.125','.625','.875']), reward_label='+12 cartuchos · Secreto encontrado'),
+           question_pool(
+               qv('¿Qué decimal equivale a 5/8″?', '.625', ['.375','.625','.875'], 'equivalence'),
+               qv('Convierte 7/8″ a decimal.', '.875', ['.625','.75','.875']),
+               qv('En la fracción 3/8, ¿cuál es el denominador?', '8', ['3','8','16'], 'special', 'El denominador es el número inferior de la fracción: 8.'),
+           ), reward_label='+12 cartuchos · Secreto encontrado'),
         st('mad_secret_01','mad',20.5,16.5,'M.A.D. #2 / SERVICE',
-           [dict(type='upgrade',mod=1),dict(type='secret',id='service_found')],question('7/8" = ?', '.875', ['.375','.625','.875'])),
+           [dict(type='upgrade',mod=1),dict(type='secret',id='service_found')],
+           question_pool(
+               qv('Convierte 7/8″ a decimal.', '.875', ['.625','.75','.875']),
+               qv('¿Qué decimal equivale a 3/8″?', '.375', ['.125','.375','.625'], 'equivalence'),
+               qv('En la fracción 5/8, ¿cuál es el denominador?', '8', ['5','8','16'], 'special', 'El denominador de 5/8 es 8.'),
+           )),
         st('generator_socket','install',28.5,21.5,'INSTALL MAIN POWER FUSE',
            [dict(type='consume_item',item_id='main_power_fuse'),dict(type='objective',id='power_restored'),
             dict(type='ensure_ammo',minimum={'pistol':24,'shotgun':12})],

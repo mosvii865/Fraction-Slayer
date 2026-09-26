@@ -104,7 +104,7 @@ def factory():
     item('foreman_med','health',38.5,31.5,30)
     item('doom_factory_ammo','ammo',48.5,8.5,24,weapon='assault',difficulties=['doom'])
 
-    def question(prompt, answer, choices, category='to_decimal', manual=False):
+    def question(prompt, answer, choices, category='to_decimal', manual=False, explanation=None):
         return dict(
             categories_allowed=[category], denominators_allowed=[2,4,8,16],
             multiple_choice_allowed=not manual, manual_allowed=manual,
@@ -112,7 +112,7 @@ def factory():
                 prompt=prompt, answer=answer, choices=[] if manual else choices,
                 category=category, mode='manual' if manual else 'choice',
                 expected_format='fraction' if category=='to_fraction' else 'text' if category=='theory' else 'decimal',
-                explanation=f'{prompt.replace(" = ?", "")} = {answer}'
+                explanation=explanation or f'{prompt.replace(" = ?", "")} = {answer}'
             )
         )
     def st(i, kind, x, y, label, reward, q=None, **kw):
@@ -126,9 +126,13 @@ def factory():
            question('5/16" = ?', '.3125', ['.1875','.3125','.625']), prerequisites={'collected':'assault_rifle'}, reward_label='+30 municiones de rifle'),
         st('factory_armory','armory',7.0,11.5,'DDI EMERGENCY ARMORY / PREVIOUS-SECTOR EQUIPMENT',
            [dict(type='recover_weapon',weapon='shotgun',reserve=10),dict(type='ensure_ammo',minimum={'shotgun':10})]),
-        st('quality_tolerance','terminal',25.5,3.5,'QUALITY CONTROL / TOLERANCE',
+        st('quality_tolerance','terminal',25.5,3.5,'CONTROL DE CALIDAD / RANGO PERMITIDO',
            [dict(type='armor',amount=20)],
-           question('SPEC .500" ± .03125" / PART .53125" // ACCEPT?', 'ACCEPT', ['ACCEPT','REJECT'], 'theory'), reward_label='+20 armadura'),
+           question(
+               'CONTROL DE CALIDAD: El rango permitido es de 0.4375″ a 0.5625″. La pieza inspeccionada mide 0.500″. ¿La pieza está dentro del rango permitido?',
+               'DENTRO DEL RANGO', ['DENTRO DEL RANGO','FUERA DEL RANGO'], 'theory',
+               explanation='Correcto: 0.500″ está entre 0.4375″ y 0.5625″. En industria, este mismo rango puede escribirse como 0.500″ ± 0.0625″. Primero aprende a identificar el rango; la notación compacta se introducirá poco a poco.'
+           ), reward_label='+20 armadura'),
         st('mad_factory_01','mad',31.5,5.5,'M.A.D. #1 / QUALITY',
            [dict(type='upgrade',mod=1)], question('7/16" = ?', '.4375', ['.3125','.4375','.5625'])),
         st('mad_factory_02','mad',48.5,7.5,'M.A.D. #2 / CATWALK SERVICE',

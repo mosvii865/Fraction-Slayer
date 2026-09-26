@@ -52,13 +52,28 @@ def test_math_pool_and_formats(diff):
     for st in l['stations']:
         if st['kind'] in ('exit','install'):continue
         count+=1
-        q=generate_question(diff,rules=st['question'])
-        assert q.check(q.answer)
-        assert set(map(int,re.findall(r'/\s*(\d+)',q.prompt+' '+q.answer+' '+' '.join(q.choices)))) <= {2,4,8}
-        assert q.mode==('manual' if diff=='doom' and st['kind'] in ('mad','cache') else 'choice')
-        if q.category=='to_decimal':assert not q.check(re.search(r'\d+/\d+',q.prompt)[0])
-        else:assert not q.check('0.375') and not q.check('6/16')
+        rules=st['question']; pool=rules.get('fixed_questions',[])
+        assert len(pool)>=3 and len({v['prompt'] for v in pool})==len(pool),st['id']
+        for variant in pool:
+            one=copy.deepcopy(rules);one.pop('fixed_questions',None);one['fixed_question']=copy.deepcopy(variant)
+            q=generate_question(diff,rules=one)
+            assert q.check(q.answer)
+            assert set(map(int,re.findall(r'/\s*(\d+)',q.prompt+' '+q.answer+' '+' '.join(q.choices)))) <= {2,4,8}
+            assert q.mode==('manual' if diff=='doom' and st['kind'] in ('mad','cache') else 'choice')
+            if q.expected_format=='decimal': assert not q.check('1/2')
+            elif q.expected_format=='fraction': assert not q.check('0.375') and not q.check('6/16')
+            elif q.expected_format=='integer': assert not q.check('0.375')
     assert count==5
+
+
+def test_workshop_question_pool_avoids_immediate_repeats():
+    e=new('clasico');st=entity(e.level(),'stations','tool_storage_terminal');e.state['player'].update(st['interaction_point'])
+    prompts=[]
+    for i in range(3):
+        call(e,'question',station='tool_storage_terminal',weapon='pistol')
+        prompts.append(e.question.prompt)
+        e.question=None;e.context=None
+    assert len(set(prompts))==3
 
 @pytest.mark.parametrize('diff',['clasico','doom'])
 def test_gates_and_essential_reachability(diff):

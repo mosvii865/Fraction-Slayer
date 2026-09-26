@@ -816,3 +816,32 @@ select {font:inherit; background:#10232c; color:#e6ece8; border:1px solid #50828
 /* v0.2-alpha3 campaign / Factory additions */
 #weapon-picker {max-height:min(72vh,520px);overflow-y:auto;overscroll-behavior:contain;}
 .campaign-transfer {margin:12px 0;padding:10px;border:1px solid #6f8f92;background:#0a1b22;color:#cfe4df;font:11px/1.55 monospace;}
+
+/* v0.2-alpha3 candidate3: readable, non-blocking boss instructions. */
+#boss-alert {
+  position:absolute;
+  left:50%;
+  top:42%;
+  transform:translate(-50%,-50%);
+  z-index:24;
+  pointer-events:none;
+  width:min(620px,78vw);
+  box-sizing:border-box;
+  padding:18px 22px;
+  text-align:center;
+  background:#07131bea;
+  border:2px solid var(--amber);
+  box-shadow:0 8px 34px #000b;
+  color:#f4e6c6;
+  font-family:monospace;
+  letter-spacing:.04em;
+}
+#boss-alert strong {display:block;color:var(--amber);font-size:18px;margin-bottom:8px;}
+#boss-alert span {display:block;color:#eef7f4;font-size:15px;font-weight:bold;}
+#boss-alert[data-tone="success"] {border-color:var(--cyan);}
+#boss-alert[data-tone="success"] strong {color:var(--cyan);}
+@media(max-height:520px){
+  #boss-alert {top:39%;width:min(580px,74vw);padding:12px 16px;}
+  #boss-alert strong {font-size:15px;margin-bottom:5px;}
+  #boss-alert span {font-size:12px;}
+}

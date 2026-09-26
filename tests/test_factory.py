@@ -49,6 +49,19 @@ def test_factory_weapons_mads_and_math_pool():
             assert set(q["denominators_allowed"]) <= {2, 4, 8, 16}
 
 
+
+
+def test_quality_control_teaches_range_before_industrial_notation():
+    level = level_config("clasico", "factory")
+    st = next(s for s in level["stations"] if s["id"] == "quality_tolerance")
+    q = st["question"]["fixed_question"]
+    prompt = q["prompt"].casefold()
+    assert "rango permitido" in prompt
+    assert "pieza" in prompt
+    assert "spec " not in prompt and "accept" not in prompt and ".03125" not in prompt
+    assert q["choices"] == ["DENTRO DEL RANGO", "FUERA DEL RANGO"]
+    assert "0.500″ ± 0.0625″" in q["explanation"]
+
 def test_conveyor_zones_are_in_bounds_and_have_walkable_space():
     level = level_config("clasico", "factory")
     for belt in level["conveyors"]:

@@ -54,7 +54,8 @@ let slot = null,
   currentStation = null,
   currentWeapon = "pistol",
   audio = null,
-  toastTimer = null;
+  toastTimer = null,
+  bossAlertTimer = null;
 try {
   slot = JSON.parse(localStorage.getItem("fraction-slayer-save"));
   lastStats = JSON.parse(localStorage.getItem("fraction-slayer-stats"));
@@ -87,6 +88,17 @@ function toast(text) {
   toastTimer = setTimeout(() => ($("#toast").textContent = ""), 3400);
 }
 
+
+function bossAlert(title, text, tone = "warning", duration = 2800) {
+  const box = $("#boss-alert");
+  if (!box) return;
+  $("#boss-alert-title").textContent = title;
+  $("#boss-alert-text").textContent = text;
+  box.dataset.tone = tone;
+  box.classList.remove("hidden");
+  clearTimeout(bossAlertTimer);
+  bossAlertTimer = setTimeout(() => box.classList.add("hidden"), duration);
+}
 function sound(kind) {
   if (!FS.settings.sound) return;
   try {

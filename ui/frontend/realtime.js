@@ -129,11 +129,20 @@ function selectWeapon(w) {
 
 function reload() {
   if (!FS.playing || FS.reloading) return;
-  const w = FS.state.weapons[FS.state.weapon],
-    cfg = FS.config.weapons[FS.state.weapon];
-  if (w.loaded >= cfg.capacity || w.reserve <= 0) return;
+  const weapon = FS.state.weapon,
+    w = FS.state.weapons[weapon],
+    cfg = FS.config.weapons[weapon],
+    name = cfg?.name || weapon.toUpperCase();
+  if (w.loaded >= cfg.capacity) {
+    toast(`${name} // CARGADOR COMPLETO ${w.loaded}/${cfg.capacity}`);
+    return;
+  }
+  if (w.reserve <= 0) {
+    toast(`${name} // SIN MUNICIÓN EN RESERVA`);
+    return;
+  }
   FS.reloading = cfg.reload;
-  toast("RECARGANDO…");
+  toast(`RECARGANDO ${name}…`);
   sound("reload");
 }
 
@@ -188,7 +197,13 @@ function shoot() {
     if (nodeTargets.length && (!targets.length || nodeTargets[0].d<=targets[0].d+.25)) {
       const n=nodeTargets[0],key=n.i===0?'node_a_hp':'node_b_hp';
       foreman[key]=Math.max(0,foreman[key]-cfg.damage);FS.worldDirty=true;
-      toast(foreman[key]<=0?`INDUSTRIAL NODE ${n.i+1} // DESTROYED`:`INDUSTRIAL NODE ${n.i+1} // ${Math.ceil(foreman[key])}`);
+      if (foreman[key] <= 0) {
+        const remaining=(foreman.node_a_hp>0?1:0)+(foreman.node_b_hp>0?1:0);
+        if (remaining > 0) bossAlert('NODO DE ENERGÍA DESTRUIDO', `${remaining} NODO ${remaining===1?'RESTANTE':'RESTANTES'}`, 'success', 1800);
+        toast(`NODO DE ENERGÍA ${n.i+1} // DESTRUIDO`);
+      } else {
+        toast(`NODO DE ENERGÍA ${n.i+1} // ${Math.ceil(foreman[key])} HP`);
+      }
       updateHUD();return;
     }
   }
@@ -203,7 +218,7 @@ function shoot() {
       const threshold=(t.e.shield_cycles===0?.67:.34)*FS.config.enemies.foreman.hp;
       t.e.hp = t.e.hp>threshold && t.e.hp-dealt<threshold ? threshold : Math.max(0,t.e.hp-dealt);
     } else t.e.hp = Math.max(0, t.e.hp - dealt);
-    if (t.e.type==='foreman' && t.e.shielded) toast('FOREMAN // PROTECTED MODE · TARGET INDUSTRIAL NODES');
+    if (t.e.type==='foreman' && t.e.shielded) toast('FOREMAN // ESCUDO ACTIVO · DESTRUYE LOS NODOS');
     t.e.last_known = {
       x: p.x,
       y: p.y
@@ -308,15 +323,17 @@ function pickups() {
 function updateHUD() {
   if (!FS.state) return;
   const s = FS.state,
-    w = s.weapons[s.weapon];
-  $("#ammo").textContent = w.loaded;
+    w = s.weapons[s.weapon],
+    weaponCfg = FS.config.weapons[s.weapon],
+    reserveLabels = {pistol:'PISTOLA',shotgun:'CORREDERA',assault:'RIFLE',sawed_off:'RECORTADA'};
+  $("#ammo").textContent = `${w.loaded}/${weaponCfg.capacity}`;
   $("#health").textContent = Math.ceil(s.player.hp);
   $("#armor").textContent = Math.ceil(s.player.armor);
   $("#healthbar").style.width = (s.player.hp / FS.config.level.player_config.max_hp * 100) + "%";
-  $("#weaponname").textContent = FS.config.weapons[s.weapon]?.name || s.weapon.toUpperCase();
+  $("#weaponname").textContent = weaponCfg?.name || s.weapon.toUpperCase();
   $("#mod").textContent =
     "MOD " + (w.mods ? "I" : "0") + " · TOCA PARA CAMBIAR";
-  $("#reserve").textContent = "RESERVA " + w.reserve;
+  $("#reserve").textContent = `RESERVA ${reserveLabels[s.weapon] || 'ARMA'}: ${w.reserve}`;
   const objectives = FS.config.level.objectives;
   $('#objective').textContent = `${s.difficulty.toUpperCase()} // OBJETIVOS ${objectives.filter(o=>s.progress.objectives[o.id]).length}/${objectives.length} · ENEMIES ${s.stats.kills}/${s.enemies.length}`;
 
@@ -329,8 +346,12 @@ function updateHUD() {
   $('#bossbar').classList.toggle('hidden',!boss || !FS.playing);
   if (boss) {
     $('#bosshp').max=FS.config.enemies[boss.type].hp; $('#bosshp').value=boss.hp;
-    if (boss.type==='loader') $('#bosslabel').textContent='LOADER MK-I // '+(boss.stun_time>0?'STUNNED':boss.charge_state.toUpperCase());
-    else $('#bosslabel').textContent='FOREMAN MK-II // '+(boss.shielded?'PROTECTED · NODES '+Math.ceil(boss.node_a_hp)+'/'+Math.ceil(boss.node_b_hp):(boss.boss_mode||'OFFENSIVE').toUpperCase());
+    if (boss.type==='loader') $('#bosslabel').textContent='LOADER MK-I // '+(boss.stun_time>0?'ATURDIDO':boss.charge_state.toUpperCase());
+    else {
+      const activeNodes=(boss.node_a_hp>0?1:0)+(boss.node_b_hp>0?1:0);
+      const modes={offensive:'OFENSIVO',recovering:'RECUPERÁNDOSE',ramming:'EMBESTIDA',slamming:'GOLPE DE ÁREA',protected:'PROTEGIDO'};
+      $('#bosslabel').textContent='FOREMAN MK-II // '+(boss.shielded?`PROTEGIDO · NODOS ACTIVOS ${activeNodes}/2`:`VULNERABLE · ${modes[boss.boss_mode]||'OFENSIVO'}`);
+    }
   }
 }
 async function checkpoint(cp) {

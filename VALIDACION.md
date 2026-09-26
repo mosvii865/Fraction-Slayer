@@ -85,3 +85,10 @@ Validación disponible en el entorno de construcción:
 - regresiones añadidas para persistencia permanente tras restart, snapshot previo a restart, prerequisitos de la rush, compuerta Lab Transit, checkpoint pre-Foreman, IDs UTCJ/campaign y Foreman support.
 
 No fue posible levantar Streamlit real en este entorno; la candidate2 requiere playtest físico antes de promover alpha3 a estable.
+
+
+## Candidate3 — feedback del primer playtest físico PC
+
+El usuario completó Workshop y Factory en PC sobre candidate2. El flujo principal y el Foreman fueron jugables; el combate del miniboss se consideró dinámico y divertido. El playtest detectó tres problemas de UX/pedagogía: calibraciones repetitivas en Workshop, una pregunta de tolerancia demasiado críptica/adelantada y poca claridad visual sobre escudo/nodos del Foreman y reservas de munición por arma.
+
+Candidate3 corrige esos puntos sin alterar la progresión principal de Factory. La validación local de esta build es: 129 tests Python, `compileall` y `node --check` sobre todos los JS. Falta repetir el recorrido físico PC y realizar el playtest móvil/DOOM.

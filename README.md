@@ -8,7 +8,7 @@ Segundo nivel de campaña construido sobre **v0.2-alpha2 — The Workshop**, la 
 
 ## Estado de esta versión
 
-**Candidate2 de playtest:** integra el hotfix posterior a auditoría (persistencia al restart, ruta principal de Factory y compuerta Lab Transit). Factory usa `revision=2`; aún requiere validación física antes de considerarse estable.
+**Candidate3 de playtest:** incorpora el primer feedback físico de PC sobre candidate2: variedad de calibraciones en Workshop, rediseño pedagógico de tolerancias, instrucciones centrales del Foreman y HUD/recarga de munición más explícitos. Factory mantiene `revision=2`; aún requiere validación física adicional antes de considerarse estable.
 
 - `industrial_test` se conserva como nivel de regresión.
 - `workshop` sigue siendo Level 01 y ahora enlaza directamente con Factory al completar la misión.
@@ -185,4 +185,4 @@ En el entorno de construcción de alpha3:
 - `python -m compileall`: **OK**.
 - El navegador/Streamlit real no pudo ejecutarse en este entorno porque la navegación local está bloqueada por política y Streamlit no está instalado.
 
-Por tanto alpha3 debe considerarse **candidate hasta el playtest físico del usuario**, igual que se hizo con las versiones anteriores. Ver `VALIDACION.md`, `CAMBIOS_V0.2-alpha3.md` y `CAMBIOS_V0.2-alpha3-candidate2.md`.
+Por tanto alpha3 debe considerarse **candidate hasta el playtest físico del usuario**, igual que se hizo con las versiones anteriores. Ver `VALIDACION.md`, `CAMBIOS_V0.2-alpha3.md`, `CAMBIOS_V0.2-alpha3-candidate2.md` y `CAMBIOS_V0.2-alpha3-candidate3.md`.

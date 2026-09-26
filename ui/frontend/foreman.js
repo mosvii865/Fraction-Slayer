@@ -10,14 +10,16 @@ function updateForeman(e, cfg, dt) {
   if (!e.shielded && threshold>0 && e.hp/max<=threshold) {
     e.shielded=true; e.shield_cycles+=1; e.boss_mode='protected';
     e.node_a_hp=cfg.node_hp; e.node_b_hp=cfg.node_hp; e.phase_time=.7;
-    toast('FOREMAN // PROTECTED MODE · DESTRUYE LOS INDUSTRIAL NODES');
+    bossAlert('FOREMAN MK-II — ESCUDO ACTIVADO', '¡DESTRUYE LOS 2 NODOS DE ENERGÍA!', 'warning', 3200);
+    toast('FOREMAN // ESCUDO ACTIVADO · DESTRUYE LOS NODOS');
     sound('bad'); FS.worldDirty=true; return;
   }
   if (e.shielded) {
     e.ai_state='pursuing'; e.boss_mode='protected';
     if (e.node_a_hp<=0 && e.node_b_hp<=0) {
       e.shielded=false; e.boss_mode='recovering'; e.phase_time=1.0;
-      toast('FOREMAN SHIELD DISABLED // EXPOSED MODE'); sound('good'); FS.worldDirty=true;
+      bossAlert('ESCUDO DESACTIVADO', '¡ATACA AL FOREMAN!', 'success', 2300);
+      toast('FOREMAN // ESCUDO DESACTIVADO · VULNERABLE'); sound('good'); FS.worldDirty=true;
     }
     return;
   }
@@ -39,7 +41,7 @@ function updateForeman(e, cfg, dt) {
     e.ai_state='slamming';
     if (!e.phase_time) {
       if (d<cfg.slam_radius && sees) hurt(FS.config.difficulty.damage*1.6);
-      toast('FOREMAN // AREA SLAM');sound('hurt');e.boss_mode='recovering';e.phase_time=cfg.recovery;
+      toast('FOREMAN // GOLPE DE ÁREA');sound('hurt');e.boss_mode='recovering';e.phase_time=cfg.recovery;
     }
     return;
   }
@@ -59,13 +61,13 @@ function updateForeman(e, cfg, dt) {
         FS.projectiles.push({x:e.x,y:e.y,vx:Math.cos(a)*cfg.projectile_speed,vy:Math.sin(a)*cfg.projectile_speed,life:3});
       }
       e.cooldown=FS.state.difficulty==='doom'?.75:1.05;
-      toast('FOREMAN // BURST FIRE');
+      toast('FOREMAN // RÁFAGA');
     } else if (mode===2 && d>2.4 && d<9) {
       e.boss_mode='ramming';e.phase_time=cfg.ram_duration*(FS.state.difficulty==='doom'?.88:1);
-      toast('FOREMAN // SHORT RAM');sound('bad');FS.worldDirty=true;
+      toast('FOREMAN // EMBESTIDA');sound('bad');FS.worldDirty=true;
     } else if (mode===3 && d<4) {
       e.boss_mode='slamming';e.phase_time=cfg.slam_prepare*(FS.state.difficulty==='doom'?.82:1);
-      toast('FOREMAN // AREA SLAM · RETROCEDE');sound('bad');FS.worldDirty=true;
+      toast('FOREMAN // GOLPE DE ÁREA · RETROCEDE');sound('bad');FS.worldDirty=true;
     } else {
       // A compact single burst if geometry prevents the preferred attack.
       FS.projectiles.push({x:e.x,y:e.y,vx:(dx/Math.max(d,.01))*cfg.projectile_speed,vy:(dy/Math.max(d,.01))*cfg.projectile_speed,life:3});

@@ -315,6 +315,19 @@ def test_station_limited_questions():
             assert "/16" not in q.prompt and "/32" not in q.prompt
 
 
+
+
+def test_fixed_question_pool_respects_exclusions_and_does_not_leak_answers():
+    rules={
+        "fixed_questions":[
+            dict(prompt="Q1",answer="0.5",choices=["0.5","0.25"],category="to_decimal",mode="choice"),
+            dict(prompt="Q2",answer="0.25",choices=["0.25","0.5"],category="to_decimal",mode="choice"),
+        ],
+        "_exclude_prompts":["Q1"],
+    }
+    q=generate_question(rules=rules,rng=random.Random(0))
+    assert q.prompt=="Q2" and q.check("0.25")
+
 def test_fixed_question():
     q = generate_question(
         rules={
@@ -491,9 +504,9 @@ def test_fixed_answer_not_exposed_in_config(lab):
             prompt="Convert 1/2", answer="0.5", category="to_decimal"
         )
     }
-    assert (
-        "fixed_question" not in e.pack()["config"]["level"]["stations"][0]["question"]
-    )
+    client_question=e.pack()["config"]["level"]["stations"][0]["question"]
+    assert "fixed_question" not in client_question
+    assert "fixed_questions" not in client_question
     solve(e, "mad_a")
 
 

@@ -66,7 +66,7 @@ const InputControls = (window.InputControls = (() => {
         w = FS.state.weapons[key];
       b.disabled = !w;
       b.setAttribute('aria-pressed', FS.state.weapon === key);
-      b.querySelector('.weapon-ammo').textContent = w ? `${w.loaded} / ${w.reserve} · MOD ${w.mods?'I':'0'}` : 'SIN RECOGER';
+      b.querySelector('.weapon-ammo').textContent = w ? `CARG ${w.loaded} · RES ${w.reserve} · MOD ${w.mods?'I':'0'}` : 'SIN RECOGER';
     });
     picker.classList.remove('hidden');
     $('#weapon-toggle').setAttribute('aria-expanded', 'true');

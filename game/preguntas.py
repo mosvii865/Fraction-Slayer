@@ -85,10 +85,10 @@ THEORY = [
         "El micrómetro mide dimensiones pequeñas con alta precisión.",
     ),
     (
-        "Una pieza debe medir 0.500 ± 0.005 pulgadas. ¿Cuál medida es aceptable?",
-        "0.503",
-        ["0.510", "0.490", "0.506"],
-        "El intervalo aceptado va de 0.495 a 0.505 pulgadas, incluidos sus extremos.",
+        "Una pieza es aceptable si mide entre 0.495 y 0.505 pulgadas. La pieza medida da 0.503 pulgadas. ¿Está dentro del rango permitido?",
+        "DENTRO DEL RANGO",
+        ["FUERA DEL RANGO", "NO SE PUEDE SABER", "HAY QUE VOLVER A MEDIR"],
+        "Sí. 0.503 está entre 0.495 y 0.505. En industria, ese mismo límite puede expresarse con una medida objetivo y una tolerancia.",
     ),
     (
         "Antes de inspeccionar un lote, debes comprobar…",
@@ -106,8 +106,20 @@ def generate_question(
     rules = rules or {}
     difficulty = rules.get("difficulty_override", difficulty)
     cfg = get_difficulty(difficulty)
-    if rules.get("fixed_question"):
+    fixed_pool = rules.get("fixed_questions")
+    if fixed_pool is not None and rules.get("fixed_question"):
+        raise ValueError("Usa fixed_question o fixed_questions, no ambos")
+    if fixed_pool is not None:
+        if not isinstance(fixed_pool, list) or not fixed_pool or any(not isinstance(x, dict) for x in fixed_pool):
+            raise ValueError("Pool de preguntas fijas inválido")
+        excluded = set(rules.get("_exclude_prompts", []))
+        available = [x for x in fixed_pool if x.get("prompt") not in excluded] or fixed_pool
+        fixed = dict(rng.choice(available))
+    elif rules.get("fixed_question"):
         fixed = dict(rules["fixed_question"])
+    else:
+        fixed = None
+    if fixed is not None:
         fixed.setdefault("choices", [])
         fixed.setdefault("mode", "manual")
         fixed.setdefault("explanation", "Calibración completada.")

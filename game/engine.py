@@ -93,6 +93,7 @@ class GameEngine:
         self.question = None
         self.context = None
         self.processed = {}
+        self.question_history = {}
         self._last_sync_log = -30.0
 
     def level(self):
@@ -103,6 +104,7 @@ class GameEngine:
         # Fixed answers are server-only, just like generated answers.
         for station in level["stations"]:
             station.get("question", {}).pop("fixed_question", None)
+            station.get("question", {}).pop("fixed_questions", None)
         return dict(
             difficulty=get_difficulty(self.state["difficulty"]),
             level=level,
@@ -266,11 +268,13 @@ class GameEngine:
             self.checkpoint = deepcopy(self.state)
             self.question = None
             self.context = None
+            self.question_history = {}
             return self.pack(kind="start")
         if action == "load":
             self.state, self.checkpoint = load_save(data["save"])
             self.question = None
             self.context = None
+            self.question_history = {}
             return self.pack(kind="start")
         if self.state is None:
             raise ValueError("Inicia una partida")
@@ -306,11 +310,15 @@ class GameEngine:
                 return self.pack(kind="interaction")
             # Preflight now, and again at commit, without consuming anything.
             rewards(self.state, level, station["reward"], weapon)
+            rules = deepcopy(station.get("question") or {})
+            if rules.get("fixed_questions"):
+                rules["_exclude_prompts"] = list(self.question_history.get(station["id"], set()))
             self.question = generate_question(
                 self.state["difficulty"],
                 self.state["stats"]["correct"],
-                rules=station.get("question"),
+                rules=rules,
             )
+            self.question_history.setdefault(station["id"], set()).add(self.question.prompt)
             self.context = (station["id"], weapon)
             return dict(
                 kind="question", question=self.question.public(), station=station["id"]
@@ -380,6 +388,7 @@ class GameEngine:
             self.checkpoint = deepcopy(self.state)
             self.question = None
             self.context = None
+            self.question_history = {}
             return self.pack(kind="transition", transition=dict(from_level=level["id"], to_level=next_id))
         if action == "checkpoint":
             cp = entity(level, "checkpoints", data["checkpoint"])

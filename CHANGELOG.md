@@ -1,3 +1,11 @@
+## v0.2-alpha3 candidate3 — Playtest Feedback — 2026-09-26
+
+- Pools variados de calibración en Workshop con anti-repetición por sesión.
+- Tolerancia de Factory rediseñada en español claro y dentro del contenido de 1/16.
+- Mensajes centrales en español para escudo/nodos del Foreman.
+- HUD de munición y recarga explícitos por arma.
+- 129 tests Python aprobados; sintaxis Python/JS validada.
+
 # Changelog
 
 ## v0.2-alpha3 — The Factory — 2026-09-25

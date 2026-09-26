@@ -208,10 +208,15 @@ def level_config(difficulty, level_id="industrial_test"):
         for station in level["stations"]:
             # Optional conversion stations become manual in DOOM; theory stays multiple choice.
             q = station.get("question", {})
-            fixed = q.get("fixed_question", {})
-            if station["kind"] in ("mad", "cache") and fixed.get("category") != "theory":
+            fixed_variants = []
+            if q.get("fixed_question"):
+                fixed_variants = [q["fixed_question"]]
+            elif q.get("fixed_questions"):
+                fixed_variants = q["fixed_questions"]
+            if station["kind"] in ("mad", "cache") and fixed_variants and all(v.get("category") != "theory" for v in fixed_variants):
                 q.update(multiple_choice_allowed=False, manual_allowed=True)
-                fixed.update(mode="manual", choices=[])
+                for fixed in fixed_variants:
+                    fixed.update(mode="manual", choices=[])
     for key in (
         "stations",
         "doors",
