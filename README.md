@@ -1,121 +1,188 @@
-# Fraction Slayer v0.2-alpha2 — The Workshop
+# Fraction Slayer v0.2-alpha3 — The Factory
 
-Primer nivel de campaña completo sobre **v0.2-alpha1.1-stable**. Python + Streamlit conservan preguntas, reglas, recompensas, progreso y guardados; Canvas/JavaScript llevan el FPS en tiempo real. No requiere instalar nada en el celular.
+Segundo nivel de campaña construido sobre **v0.2-alpha2 — The Workshop**, la última base validada físicamente por el usuario. Python/Streamlit conserva reglas educativas, progreso, recompensas, campaña y guardados; Canvas/JavaScript lleva el FPS en tiempo real.
 
 **Diseño y concepto:** Esteban Montaño. **Proyecto académico:** Universidad Tecnológica de Ciudad Juárez.
 
 > La matemática no te impide jugar. Te permite jugar mejor.
 
-## Jugar
+## Estado de esta versión
 
-**NUEVA PARTIDA → nombre → LEVEL 01 — THE WORKSHOP → CLÁSICO / DOOM.** Workshop es el destino predeterminado de la interfaz. El selector también ofrece **Industrial Test — regresión**, conservado con su mapa y balance anteriores. La API Python sin `level_id` mantiene ese nivel antiguo para compatibilidad.
+**Candidate2 de playtest:** integra el hotfix posterior a auditoría (persistencia al restart, ruta principal de Factory y compuerta Lab Transit). Factory usa `revision=2`; aún requiere validación física antes de considerarse estable.
 
-Misión: **RESTORE POWER AND REACH THE ELEVATOR**. Eres un estudiante de UTCJ en su primer día de estadías en DDI, Quality Control. Primero combate y exploración; solo la puerta del fusible exige una conversión. Las otras cuatro calibraciones dan ventajas opcionales.
+- `industrial_test` se conserva como nivel de regresión.
+- `workshop` sigue siendo Level 01 y ahora enlaza directamente con Factory al completar la misión.
+- `factory` es Level 02, con nueve zonas, conveyors, Assault Rifle, Sawed-Off, Sentinel, Corrupted Gunner, rush de tres oleadas y Foreman MK-II.
+- The Laboratory **no está implementado**; solo aparece como teaser al terminar Factory.
+- La campaña conserva armas, MOD I de M.A.D., PROJECT U.T.C.J., HP, armadura y munición entre niveles. Los objetos/flags locales no migran.
 
-| Zona | Contenido |
+## Flujo de campaña
+
+**NUEVA PARTIDA → LEVEL 01 — THE WORKSHOP → CLÁSICO / DOOM.** Al completar Workshop aparece **CONTINUAR CAMPAÑA →**. La transición a Factory conserva el arsenal y aplica un resupply mínimo sin quitar recursos ganados:
+
+- HP: `max(HP actual, 60)`.
+- Armadura: se conserva dentro del máximo del nuevo nivel.
+- Reserva mínima si el arma existe: pistola 24, Pump 10, Assault 36 y Sawed-Off 8.
+- Si una reserva ya es mayor, no se reduce.
+- Se eliminan fusibles, quest items, enemigos, triggers, puertas, checkpoints y progreso local del nivel anterior.
+
+PROJECT U.T.C.J. usa señales independientes. Encontrar solo el logo de Factory muestra **1/4**; encontrar Workshop + Factory muestra **2/4**. El orden no importa.
+
+## Level 01 — The Workshop
+
+Se conserva el contenido validado de alpha2: Reception, Tool Storage, Assembly Floor, Calibration Room, Maintenance Tunnels, Power Control, Generator Hall y Exit Elevator; Pump Shotgun, dos M.A.D., UTCJ, fusible, energía y Loader MK-I. La salida exige `power_restored && loader_defeated` y ya puede transferir la campaña hacia Factory.
+
+## Level 02 — The Factory
+
+Objetivo: **REACTIVATE PRODUCTION CONTROL AND REACH LAB TRANSIT**.
+
+| Zona | Contenido principal |
 |---|---|
-| Reception / Inspection Bay | Inicio tranquilo, pistola 12 + 24; dos Workers al avanzar |
-| Tool Storage | +6 balas, +10 HP, terminal opcional 1/2 = .50 → +12 balas |
-| Assembly Floor | Dos oleadas; escopeta durante el combate, 8 + 12 cartuchos |
-| Calibration Room | M.A.D. #1 visible, 3/4 = .75, MOD I de pistola o escopeta |
-| Maintenance Tunnels | +25 armadura, +8 cartuchos; alcoba con M.A.D. #2 y emblema UTCJ |
-| Power Control | Puerta obligatoria .375 = 3/8; fusible; emboscada; Secure Cache 5/8 = .625 → +12 cartuchos |
-| Generator Hall | Instalar fusible sin pregunta; suministro mínimo; energía y Loader MK-I |
-| Exit Elevator | Se abre con energía restaurada **y** Loader derrotado; estadísticas y teaser de The Factory |
+| Freight Elevator / Receiving | Entrada desde Workshop; 2 Workers + Rivet tras avanzar |
+| Production Line A | Primeros conveyors; Assault Rifle durante el combate |
+| Tooling Bay | Terminal 5/16 = .3125 y DDI Emergency Armory |
+| Quality Control | Tolerancia industrial y M.A.D. #1 |
+| Conveyor Network | Sentinel, cobertura y conveyor rápido |
+| Production Line B | Sawed-Off y debut de Corrupted Gunner |
+| Maintenance Catwalks | Exploración, M.A.D. #2 y PROJECT U.T.C.J. Factory |
+| Central Manufacturing Floor | Rush de tres oleadas, controles de producción y M.A.D. #3 |
+| Lab Transit | Salida tras Production Controls + Foreman MK-II |
 
-Ruta: Reception → Assembly → Calibration → Maintenance → Power Control; vuelve por Maintenance hacia Generator Hall. Tool Storage y la alcoba de servicio son ramales opcionales. El HUD nombra la zona y el objetivo; un rombo ámbar señala el destino en el minimapa. No es una ruta automática.
+CLÁSICO contiene **30 enemigos** y DOOM **42**, con composición/posiciones adicionales en vez de inflar simplemente el HP de los jefes.
 
-El segundo M.A.D. pide **7/8 = .875** y mejora el arma pendiente. Si no hay una compatible, informa y sigue disponible; un fallo matemático no consume estaciones. Dispara al emblema oculto: **PROJECT U.T.C.J. 1/4 — SIGNAL REGISTERED**. Si lo omites, el resumen dice **UTCJ: ???**. No cuenta como enemigo ni kill.
+### Matemáticas de Factory
 
-## Loader MK-I
+Factory conserva denominadores 2/4/8 e introduce **1/16**:
 
-250 HP en ambos modos; melee, carga corta con dirección fijada y aviso, ground slam con aviso y recuperación. Chocar contra sólidos lo aturde **1.75 s**. Su núcleo trasero recibe **×1.65** daño; el frontal también permite derrotarlo. Color rojo durante preparación y azul al aturdirse; barra de vida y sonidos sintetizados.
+`1/16=.0625`, `3/16=.1875`, `5/16=.3125`, `7/16=.4375`, `9/16=.5625`, `11/16=.6875`, `13/16=.8125`, `15/16=.9375`.
 
-Al cruzar el 50% se registra un evento único. Primero hay alerta y sonido; **dos segundos de juego después** se activan dos Crawlers, más un Rivet en DOOM. Si varios impactos llegan juntos por latencia, el evento no se pierde aunque incluyan el golpe final. El elevador no exige eliminar estos refuerzos ni otros enemigos opcionales.
+Hay conversión fracción↔decimal, equivalencia, simplificación sencilla y aplicación industrial. Ejemplos fijos del nivel incluyen:
 
-## CLÁSICO / DOOM
+- Tooling: `5/16" = .3125`.
+- Quality tolerance: `SPEC .500" ± .03125" / PART .53125" → ACCEPT`.
+- M.A.D. #1: `7/16" = .4375`.
+- Production Control A: `.6875" = 11/16`.
+- Production Control B: `13/16" = .8125`.
 
-| Workshop | CLÁSICO | DOOM |
-|---|---:|---:|
-| Worker / Crawler / Rivet / Loader | 11 / 5 / 4 / 1 | 14 / 9 / 6 / 1 |
-| Total | 21 | 30 |
-| Vida del Loader | 250 | 250 |
-| Velocidad / daño base / intervalo | .75 / 8 / 1.70 s | 1.12 / 14 / 1.05 s |
-| Preguntas | Cinco de opción múltiple | Terminal y puerta con opciones; M.A.D./cache manuales |
-| Denominadores | 2, 4, 8 | 2, 4, 8 |
+Las calibraciones normales siguen bloqueadas cuando hay una amenaza cercana relevante: **AREA NOT SECURE**. No hay preguntas matemáticas durante Foreman MK-II.
 
-La pistola comienza con 12 cargadas + 24 de reserva y la escopeta con 8 + 12 en ambos modos. DOOM añade encuentros concretos, posiciones, agresividad y preparación de carga más corta, no más HP. Los recursos de Workshop son explícitos; no heredan el escalado global de Industrial Test. Hay proporcionalmente menos recursos por enemigo en DOOM.
+### Assault Rifle y Sawed-Off
 
-Después de despejar Generator Hall se asegura una vez un total mínimo de **24 balas y 12 cartuchos**, por arma poseída. Instalar el fusible vuelve a comprobar ese piso una sola vez al iniciar el boss. No se rellena cada frame ni al abrir el menú, y no depende de acertar preguntas opcionales.
+- **Assault Rifle:** 30 de cargador, alta cadencia, media distancia; MOD I **Compensator**.
+- **Sawed-Off:** 2 cartuchos, daño alto a corta distancia; MOD I **Magnum Load**.
 
-La economía apunta a ~1.5× CLÁSICO y ~1.28× DOOM bajo una estimación simplificada (65% impactos, 40 de daño medio por cartucho, sin MOD/rear/múltiples blancos; incluye terminal/cache y excluye aportes variables de los pisos de emergencia). **No es balance medido en jugadores.** Objetivo de duración inicial: 8–12 minutos, todavía pendiente de validación humana.
+M.A.D. #1/#2/#3 comparten el sistema existente y no se consumen si no existe una modificación compatible.
 
-## Ejecución local exacta
+### DDI Emergency Armory
 
-Recomendado Python 3.12. Descomprime el ZIP y entra en `fraction-slayer/`:
+Tooling Bay incluye una recuperación no matemática de la Pump Shotgun si el jugador llegó a Factory sin ella. No entrega armas futuras.
 
-```bash
-python -m venv .venv
-```
+### Conveyors
 
-Windows PowerShell: `.venv\Scripts\Activate.ps1`. macOS/Linux: `source .venv/bin/activate`.
+Los belts aplican empuje mediante el mismo movimiento con colisiones del jugador. Factory usa belts normales y uno rápido. El empuje no elimina el control y no atraviesa sólidos. El diseño evita usar conveyors como muerte instantánea inevitable.
 
-```bash
-python -m pip install -r requirements.txt
-python -m streamlit run app.py
-```
+### Sentinel y Corrupted Gunner
 
-Abre `http://localhost:8501`. No abras `ui/frontend/index.html` directamente: el componente necesita Python/Streamlit. No hay Node/npm, build del frontend, API keys, base de datos ni CDN necesarios para jugar.
+- **Sentinel:** fijo/semiestático, burst fire, línea de visión, cooldown y cobertura.
+- **Corrupted Gunner:** móvil, ráfagas, búsqueda y strafe/reposicionamiento.
 
-Teléfono en la misma Wi-Fi:
+Ambos comparten el estado de IA persistente ya usado por el motor y no son bullet sponges.
 
-```bash
-python -m streamlit run app.py --server.address 0.0.0.0
-```
+## Rush y Production Controls
 
-Abre `http://IP_LOCAL_DE_TU_PC:8501` y permite el puerto en el firewall si corresponde. En Community Cloud basta su URL HTTPS y el móvil horizontal.
+Central Manufacturing Floor activa tres oleadas monotónicas:
+
+1. Workers + Crawlers.
+2. Rivet + Sentinel + presión adicional.
+3. Corrupted Gunner + Crawlers + Workers.
+
+Cada wave queda registrada en `progress.waves`; save/load o CONTINUAR no vuelve a disparar una wave ya completada. Al limpiar el rush aparecen los dos controles matemáticos. Activar ambos fija `production_controls_disabled`.
+
+## Foreman MK-II
+
+Miniboss propio de Factory, separado de Loader.
+
+- HP base: **360** en la configuración actual.
+- Burst Fire.
+- Short Ram.
+- Area Slam.
+- Support Deployment al caer por debajo del 50%.
+- Dos ciclos de **PROTECTED MODE** aproximadamente al 67% y 34%.
+- Durante protección el daño al Foreman se bloquea y aparecen dos **Industrial Nodes**.
+- Destruir ambos nodos devuelve **EXPOSED MODE**.
+
+La salida solo se habilita con:
+
+`production_controls_disabled && foreman_defeated`
+
+No exige eliminar todos los enemigos opcionales del mapa.
 
 ## Controles
 
 | Acción | Móvil horizontal | PC |
 |---|---|---|
-| Moverse | Joystick flotante izquierdo, analógico | WASD |
-| Girar | Arrastrar zona derecha sin botones | Mouse capturado si se permite; arrastre con botón derecho o ← / → |
-| Disparar | Mantener DISPARAR | Clic izquierdo; Espacio como alternativa |
-| Interactuar | USAR, cerca de estación | E |
-| Cambiar arma | ARMAS → selector compacto, sin soltar el joystick | 1 pistola / 2 escopeta |
-| Recargar | Botón grande RECARGAR a la derecha | R |
-| Pausar | Ⅱ, esquina superior | Esc o botón Ⅱ |
-| Pantalla completa | ⛶ si el navegador lo admite | ⛶ |
+| Moverse | Joystick flotante izquierdo | WASD |
+| Girar | Arrastrar zona derecha | Mouse / arrastre derecho / ← → |
+| Disparar | Mantener DISPARAR | Clic izquierdo / Espacio |
+| Interactuar | USAR | E |
+| Recargar | RECARGAR | R |
+| Cambiar arma | ARMAS sin soltar joystick | 1 Pistola · 2 Pump · 3 Assault · 4 Sawed-Off |
+| Pausa | Ⅱ | Esc |
 
-No hay salto ni botón de correr. La velocidad base ya es rápida. El pad, la cámara y el disparo usan punteros independientes para admitir multitouch. Al perder foco, girar a vertical o cambiar de pestaña se pausa el juego. Algunas funciones del navegador, como pantalla completa en iPhone, dependen de Safari y de los permisos del iframe; la vista horizontal funciona sin ellas.
+No hay salto ni botón de sprint. Multitouch y safe areas de alpha2 se conservan.
 
-En Configuración puedes ajustar sensibilidad, sonido, minimapa y resolución reducida. El teclado holográfico incluye `/`, signo negativo, borrar y limpiar, además de los dígitos y el punto. No depende del teclado nativo para las respuestas matemáticas. El nombre sí usa un campo de texto normal.
+## Guardado
 
-## Guardado y checkpoints
+**SAVE_VERSION = 3.**
 
-Un slot local, exportable/importable en Configuración. **SAVE_VERSION = 2** se conserva: los saves de `industrial_test` de la estable siguen cargando; v1, revisiones incompatibles o datos corruptos se rechazan con un mensaje y permiten partida nueva. Workshop tiene su propio `level_id`, revisión y progreso; nunca mezcla checkpoints de niveles distintos.
+- Saves v3 guardan campaña + estado local.
+- Saves v2 válidos se migran añadiendo el bloque de campaña sin alterar su nivel actual.
+- Saves v1, corruptos o revisiones incompatibles se rechazan limpiamente.
+- La campaña guarda `current_level`, `completed_levels`, `utcj_found` y estadísticas globales.
+- El estado del nivel sigue guardando enemigos, checkpoints, estaciones, waves, secretos, inventario y objetivos.
+- El Foreman persiste con modo, escudo, ciclos, HP de nodos, cooldown y support deployment.
 
-Se guardan inventario/fusible, objetivos, estaciones por ID, oleadas y tiempos de triggers, estado/fase del Loader, secretos, mejoras y estadísticas. Los cuatro checkpoints son Reception, Calibration tras Assembly, fusible recuperado tras la emboscada y antes del Loader. Se rechazan checkpoints muertos o inseguros; al reiniciar hay mínimo 50 HP, munición y 2.5 s de gracia. Se restaura el progreso del checkpoint, no los eventos posteriores a él.
+El slot continúa siendo local/exportable. Una pérdida de `session_state` usa la recuperación de sesión existente.
 
-Python usa `session_state`; el navegador conserva `fraction-slayer-save` y las preferencias. Una sesión de Streamlit perdida intenta restauración limitada desde ese slot. No depende del disco efímero de Community Cloud. Borrar datos del navegador o cambiar de dispositivo requiere importar el JSON exportado. Nueva Partida reemplaza el único slot.
+## Ejecución local
+
+Python 3.12 recomendado:
+
+```bash
+python -m venv .venv
+# Windows: .venv\Scripts\Activate.ps1
+# macOS/Linux: source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
+```
+
+Abre `http://localhost:8501`. Para teléfono en la misma red puede usarse `--server.address 0.0.0.0`. En Streamlit Community Cloud usa el contenido de `fraction-slayer/` como raíz del repositorio.
 
 ## Archivos principales
 
 | Archivo | Responsabilidad |
 |---|---|
-| `app.py` | Arranque Streamlit y entrega de eventos, sin cambios |
-| `game/workshop.py` | Grid, zonas, encuentros, estaciones, objetivos, gates y recursos del nuevo nivel |
-| `game/nivel.py` | Registro de niveles y composición por dificultad |
-| `game/engine.py`, `world.py` | Reglas autoritativas, transacciones, instalación del fusible, checkpoints y eventos |
-| `game/preguntas.py`, `conversiones.py` | Validación educativa existente, sin cambios |
-| `game/save_system.py` | Save v2, fases del boss y tiempos de eventos opcionales |
-| `ui/frontend/loader.js` | Ataques y feedback del Loader; no decide recompensas ni progreso |
-| `ui/frontend/realtime.js` | Combate, movimiento y sincronización |
-| `ui/frontend/game.js`, `renderer.js` | Menús/hologramas, mapa, sprites procedurales y HUD |
-| `ui/frontend/controls.js`, `bridge.js` | Controles/diagnóstico y protocolo Streamlit, sin cambios |
-| `tests/test_workshop.py`, `browser_workshop.py`, `workshop_driver.js` | Reglas, gates y recorrido de Workshop contra Streamlit real |
+| `game/workshop.py` | Level 01 validado y transición hacia Factory |
+| `game/factory.py` | Level 02: mapa, encuentros, estaciones, conveyors, rush, Foreman |
+| `game/nivel.py` | Registro `industrial_test`, `workshop`, `factory` |
+| `game/engine.py` | campaña, transición, resupply y transacciones autoritativas |
+| `game/save_system.py` | SAVE_VERSION 3 y migración v2 |
+| `game/armas.py`, `mejoras.py` | Assault/Sawed-Off y sus MOD I |
+| `game/world.py` | UTCJ de campaña, armory/rewards y progreso monotónico |
+| `ui/frontend/foreman.js` | ataques/fases realtime del Foreman |
+| `ui/frontend/realtime.js` | combate, conveyors, Sentinel/Gunner, nodes, HUD |
+| `ui/frontend/renderer.js` | representación procedural de Factory y armas nuevas |
+| `tests/test_factory.py` | regresiones de Factory/campaña |
 
-Se mantiene el límite original de confianza: combate y posiciones del cliente son telemetría de un juego de un jugador; no hay antitrampas competitivo. Python decide las respuestas, recompensas, estaciones, oleadas, scoring y validación del save.
+Se mantiene **ERROR DE MOTOR**, `COPIAR ERROR` y el diagnóstico introducido en la estable.
 
-Se conserva **ERROR DE MOTOR**, `COPIAR ERROR`, stack/etapa/contexto y `DEBUG_ENGINE_ERRORS=true` en `controls.js`. Los errores no se ocultan. Python registra eventos y excepciones sin imprimir saves ni respuestas; sync exitoso como máximo cada 30 segundos por sesión.
+## Validación de esta entrega
+
+En el entorno de construcción de alpha3:
+
+- `python -m pytest -q`: **126 passed**.
+- `node --check ui/frontend/*.js`: **OK**.
+- `python -m compileall`: **OK**.
+- El navegador/Streamlit real no pudo ejecutarse en este entorno porque la navegación local está bloqueada por política y Streamlit no está instalado.
+
+Por tanto alpha3 debe considerarse **candidate hasta el playtest físico del usuario**, igual que se hizo con las versiones anteriores. Ver `VALIDACION.md`, `CAMBIOS_V0.2-alpha3.md` y `CAMBIOS_V0.2-alpha3-candidate2.md`.

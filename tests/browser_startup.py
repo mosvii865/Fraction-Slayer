@@ -54,7 +54,7 @@ def main():
                     f.wait_for_function('FS.playing && FS.debugStage === "FRAME_END"')
                     assert f.evaluate('FS.state.checkpoint') == 'inicio'
                     assert f.evaluate('FS.state.level_id') == 'industrial_test'
-                    assert f.evaluate('slot.version') == 2
+                    assert f.evaluate('slot.version') == 3
                     assert f.evaluate('FS.state.enemies.length') == (6 if difficulty == 'doom' else 3)
                     assert f.locator('#hud').is_visible()
                     assert f.locator('#world').is_visible()

@@ -78,7 +78,9 @@ function worldFeedback(before, after) {
     }
   }
   if (after.utcj_found.length>before.utcj_found.length) {
-    toast(`PROJECT U.T.C.J. // ${after.utcj_found.length}/${FS.config.level.campaign_secrets || 4} · SIGNAL REGISTERED`);
+    const previousTotal=FS.state?.campaign?.utcj_found?.length || 0;
+    const gained=after.utcj_found.length-before.utcj_found.length;
+    toast(`PROJECT U.T.C.J. // ${Math.min(FS.config.level.campaign_secrets || 4, previousTotal+gained)}/${FS.config.level.campaign_secrets || 4} · SIGNAL REGISTERED`);
     sound('good');
   }
 }

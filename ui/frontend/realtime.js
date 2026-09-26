@@ -65,6 +65,7 @@ function mergeWorld(reply, before) {
   s.inventory = r.inventory;
   s.checkpoint = r.checkpoint;
   s.report = r.report;
+  s.campaign = r.campaign;
   for (const k of ['correct', 'attempted', 'streak', 'best_streak', 'secrets']) s.stats[k] = r.stats[k];
   for (const e of s.enemies) {
     const a = r.enemies.find(x => x.id === e.id);
@@ -116,7 +117,7 @@ function move(entity, vx, vy, r = 0.2) {
 
 function selectWeapon(w) {
   if (!FS.state?.weapons[w]) {
-    toast("Encuentra la escopeta en el mapa");
+    toast("ARMA NO DISPONIBLE // Encuéntrala en la campaña");
     return;
   }
   if (FS.state.weapon !== w) window.InputControls?.haptic("weapon");
@@ -174,19 +175,40 @@ function shoot() {
       clearLine(p.x, p.y, t.e.x, t.e.y),
     )
     .sort((a, b) => a.d - b.d);
-  // Pistol hits the closest target; shotgun's cone can hit several with falloff.
-  for (const t of targets.slice(0, s.weapon === "shotgun" ? 3 : 1)) {
-    const falloff =
-      s.weapon === "shotgun" ? Math.max(0.25, 1 - t.d / (cfg.range * 1.3)) : 1;
+  // Shotguns can hit several targets; precision/automatic weapons resolve the closest target.
+  const pelletWeapon = s.weapon === "shotgun" || s.weapon === "sawed_off";
+  // Protected Foreman nodes are combat targets, not enemies or math interactions.
+  const foreman=s.enemies.find(e=>e.type==='foreman' && e.active && e.hp>0 && e.shielded);
+  if (foreman && FS.config.level.boss_nodes?.length) {
+    const nodeTargets=FS.config.level.boss_nodes.map((node,i)=>{
+      const hp=i===0?foreman.node_a_hp:foreman.node_b_hp;
+      let a=Math.atan2(node.y-p.y,node.x-p.x)-p.angle;a=Math.atan2(Math.sin(a),Math.cos(a));
+      return {node,i,hp,a,d:Math.hypot(node.x-p.x,node.y-p.y)};
+    }).filter(n=>n.hp>0 && n.d<cfg.range && Math.abs(n.a)<cfg.spread+Math.atan2(.3,n.d) && clearLine(p.x,p.y,n.node.x,n.node.y)).sort((a,b)=>a.d-b.d);
+    if (nodeTargets.length && (!targets.length || nodeTargets[0].d<=targets[0].d+.25)) {
+      const n=nodeTargets[0],key=n.i===0?'node_a_hp':'node_b_hp';
+      foreman[key]=Math.max(0,foreman[key]-cfg.damage);FS.worldDirty=true;
+      toast(foreman[key]<=0?`INDUSTRIAL NODE ${n.i+1} // DESTROYED`:`INDUSTRIAL NODE ${n.i+1} // ${Math.ceil(foreman[key])}`);
+      updateHUD();return;
+    }
+  }
+  for (const t of targets.slice(0, pelletWeapon ? (s.weapon === "sawed_off" ? 4 : 3) : 1)) {
+    const falloff = pelletWeapon ? Math.max(0.25, 1 - t.d / (cfg.range * 1.3)) : 1;
     const ec = FS.config.enemies[t.e.type],
       back = Math.atan2(p.y - t.e.y, p.x - t.e.x) - t.e.facing;
     const rear = Math.abs(Math.atan2(Math.sin(back), Math.cos(back))) > Math.PI - ec.rear_angle ? ec.rear_multiplier : 1;
-    t.e.hp = Math.max(0, t.e.hp - cfg.damage * falloff * rear);
+    const shield = t.e.type==='foreman' && t.e.shielded ? (FS.config.enemies.foreman.protected_multiplier ?? 0) : 1;
+    const dealt=cfg.damage * falloff * rear * shield;
+    if (t.e.type==='foreman' && !t.e.shielded && t.e.shield_cycles<2) {
+      const threshold=(t.e.shield_cycles===0?.67:.34)*FS.config.enemies.foreman.hp;
+      t.e.hp = t.e.hp>threshold && t.e.hp-dealt<threshold ? threshold : Math.max(0,t.e.hp-dealt);
+    } else t.e.hp = Math.max(0, t.e.hp - dealt);
+    if (t.e.type==='foreman' && t.e.shielded) toast('FOREMAN // PROTECTED MODE · TARGET INDUSTRIAL NODES');
     t.e.last_known = {
       x: p.x,
       y: p.y
     };
-    if (t.e.type !== "loader") t.e.ai_state = 'pursuing';
+    if (!['loader','foreman'].includes(t.e.type)) t.e.ai_state = 'pursuing';
     t.e.search_time = ec.search_seconds;
     FS.worldDirty = true;
     if (t.e.hp <= 0) {
@@ -291,7 +313,7 @@ function updateHUD() {
   $("#health").textContent = Math.ceil(s.player.hp);
   $("#armor").textContent = Math.ceil(s.player.armor);
   $("#healthbar").style.width = (s.player.hp / FS.config.level.player_config.max_hp * 100) + "%";
-  $("#weaponname").textContent = s.weapon === "pistol" ? "PISTOLA" : "ESCOPETA";
+  $("#weaponname").textContent = FS.config.weapons[s.weapon]?.name || s.weapon.toUpperCase();
   $("#mod").textContent =
     "MOD " + (w.mods ? "I" : "0") + " · TOCA PARA CAMBIAR";
   $("#reserve").textContent = "RESERVA " + w.reserve;
@@ -303,11 +325,12 @@ function updateHUD() {
     const zone=FS.config.level.zones.find(z=>condition({zone:z.zone}));
     $('#objective').textContent=(zone?zone.label+' // ':'')+hint.text;
   }
-  const boss=s.enemies.find(e=>e.type==='loader' && e.active && e.hp>0);
+  const boss=s.enemies.find(e=>['loader','foreman'].includes(e.type) && e.active && e.hp>0);
   $('#bossbar').classList.toggle('hidden',!boss || !FS.playing);
   if (boss) {
     $('#bosshp').max=FS.config.enemies[boss.type].hp; $('#bosshp').value=boss.hp;
-    $('#bosslabel').textContent='LOADER MK-I // '+(boss.stun_time>0?'STUNNED':boss.charge_state.toUpperCase());
+    if (boss.type==='loader') $('#bosslabel').textContent='LOADER MK-I // '+(boss.stun_time>0?'STUNNED':boss.charge_state.toUpperCase());
+    else $('#bosslabel').textContent='FOREMAN MK-II // '+(boss.shielded?'PROTECTED · NODES '+Math.ceil(boss.node_a_hp)+'/'+Math.ceil(boss.node_b_hp):(boss.boss_mode||'OFFENSIVE').toUpperCase());
   }
 }
 async function checkpoint(cp) {
@@ -360,6 +383,13 @@ function tick(dt, t) {
     (Math.cos(p.angle) * forward - Math.sin(p.angle) * strafe) * speed,
     (Math.sin(p.angle) * forward + Math.cos(p.angle) * strafe) * speed,
   );
+  for (const belt of (FS.config.level.conveyors || [])) {
+    const z=belt.zone;
+    if (p.x>=z[0]&&p.y>=z[1]&&p.x<=z[2]&&p.y<=z[3]) {
+      move(p,(belt.dx||0)*belt.speed*dt,(belt.dy||0)*belt.speed*dt,.2);
+      FS.onConveyor=belt.id;
+    } else if (FS.onConveyor===belt.id) FS.onConveyor=null;
+  }
   if (FS.fireHeld) shoot();
   FS.debugStage = 'PICKUP_UPDATE';
   pickups();
@@ -372,6 +402,7 @@ function tick(dt, t) {
       dy = p.y - e.y,
       d = Math.hypot(dx, dy);
     if (e.type === "loader") { updateLoader(e,cfg,dt); continue; }
+    if (e.type === "foreman") { updateForeman(e,cfg,dt); continue; }
     e.cooldown = Math.max(0, (e.cooldown || 0) - dt);
     if (e.stun_time > 0) {
       e.stun_time = Math.max(0, e.stun_time - dt);
@@ -417,16 +448,19 @@ function tick(dt, t) {
         move(e, -ty / td * v * side, tx / td * v * side, cfg.radius);
       }
     }
+    if (e.type==='gunner' && sees && d>2.5 && d<cfg.range && e.cooldown>.15) {
+      const side=e.id.length%2?1:-1, v=(cfg.strafe||.45)*dt;
+      move(e,-dy/Math.max(d,.01)*v*side,dx/Math.max(d,.01)*v*side,cfg.radius);
+    }
     if (sees && d < cfg.range && e.cooldown <= 0) {
-      e.cooldown = FS.config.difficulty.attack_interval;
-      if (e.type === "rivet") {
-        FS.projectiles.push({
-          x: e.x,
-          y: e.y,
-          vx: (dx / d) * 4.5,
-          vy: (dy / d) * 4.5,
-          life: 3,
-        });
+      e.cooldown = FS.config.difficulty.attack_interval * (e.type==='sentinel'?.82:e.type==='gunner'?.72:1);
+      if (e.type === "rivet" || cfg.ranged) {
+        const speed=cfg.projectile_speed || 4.5;
+        const count=e.type==='sentinel'?2:1;
+        for(let j=0;j<count;j++){
+          const a=Math.atan2(dy,dx)+(count===2?(j?0.035:-0.035):0);
+          FS.projectiles.push({x:e.x,y:e.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:3});
+        }
       } else hurt(FS.config.difficulty.damage);
     }
   }

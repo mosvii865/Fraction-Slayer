@@ -1,12 +1,16 @@
 from .armas import weapon_config, WEAPONS
 
-MODS = {"pistol": "Precision Barrel", "shotgun": "Tight Choke"}
+MODS = {
+    "pistol": "Precision Barrel",
+    "shotgun": "Tight Choke",
+    "assault": "Compensator",
+    "sawed_off": "Magnum Load",
+}
 
 
 def eligible_weapons(state, mod=1):
     return [
-        w
-        for w, a in state["weapons"].items()
+        w for w, a in state["weapons"].items()
         if w in MODS and a["mods"] == mod - 1 and mod <= 1
     ]
 

@@ -158,8 +158,9 @@ def industrial_test():
 
 
 from .workshop import workshop
+from .factory import factory
 
-LEVELS = {"industrial_test": industrial_test, "workshop": workshop}
+LEVELS = {"industrial_test": industrial_test, "workshop": workshop, "factory": factory}
 
 
 def level_config(difficulty, level_id="industrial_test"):
@@ -203,12 +204,14 @@ def level_config(difficulty, level_id="industrial_test"):
     for item in level["items"]:
         if level.get("scale_resources", True) and item["type"] in ("ammo", "health", "armor"):
             item["amount"] = max(1, round(item["amount"] * cfg["resources"]))
-    if difficulty == "doom" and level_id == "workshop":
+    if difficulty == "doom" and level_id in ("workshop", "factory"):
         for station in level["stations"]:
-            if station["kind"] in ("mad", "cache"):
-                q = station["question"]
+            # Optional conversion stations become manual in DOOM; theory stays multiple choice.
+            q = station.get("question", {})
+            fixed = q.get("fixed_question", {})
+            if station["kind"] in ("mad", "cache") and fixed.get("category") != "theory":
                 q.update(multiple_choice_allowed=False, manual_allowed=True)
-                q["fixed_question"].update(mode="manual", choices=[])
+                fixed.update(mode="manual", choices=[])
     for key in (
         "stations",
         "doors",
@@ -223,4 +226,6 @@ def level_config(difficulty, level_id="industrial_test"):
         ids = [x["id"] for x in level[key]]
         if len(ids) != len(set(ids)):
             raise ValueError(f"IDs duplicados: {key}")
+    level.setdefault("conveyors", [])
+    level.setdefault("boss_nodes", [])
     return level

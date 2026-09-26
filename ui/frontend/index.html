@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
-    <title>Fraction Slayer v0.2-alpha2</title>
+    <title>Fraction Slayer v0.2-alpha3</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -36,6 +36,8 @@
         <div id="weapon-picker" class="hidden" role="group" aria-label="Selector rápido de armas">
           <button data-select-weapon="pistol" aria-label="Seleccionar pistola"><b>1 · PISTOLA</b><span class="weapon-ammo"></span></button>
           <button data-select-weapon="shotgun" aria-label="Seleccionar escopeta"><b>2 · ESCOPETA</b><span class="weapon-ammo"></span></button>
+          <button data-select-weapon="assault" aria-label="Seleccionar assault rifle"><b>3 · ASSAULT RIFLE</b><span class="weapon-ammo"></span></button>
+          <button data-select-weapon="sawed_off" aria-label="Seleccionar sawed-off"><b>4 · SAWED-OFF</b><span class="weapon-ammo"></span></button>
           <button id="weapon-close" aria-label="Cerrar selector de armas">CERRAR ×</button>
         </div>
       </div>
@@ -76,6 +78,7 @@
     <script src="renderer.js"></script>
     <script src="game.js"></script>
     <script src="loader.js"></script>
+    <script src="foreman.js"></script>
     <script src="realtime.js"></script>
     <script src="controls.js"></script>
   </body>

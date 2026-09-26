@@ -302,7 +302,7 @@ function mainMenu() {
   freeze();
   uiGameplay(false);
   overlay(
-    `<main class="menu"><div class="hero"><div class="eyebrow">DDI / QUALITY CONTROL DIVISION</div><h1>FRACTION<br><em>SLAYER</em></h1><span class="badge">ESTADÍAS PROFESIONALES • V0.2-ALPHA2</span><p>Primer día. Una fábrica fuera de control.<br>Y una máquina que no sabe redondear.</p><p>La matemática no te impide jugar.<br>Te permite jugar mejor.</p></div><nav class="nav"><button class="primary" id="new">NUEVA PARTIDA <small>01</small></button><button id="continue" ${slot ? "" : "disabled"}>CONTINUAR <small>02</small></button><button id="stats">ESTADÍSTICAS <small>03</small></button><button id="settings">CONFIGURACIÓN <small>04</small></button><button id="credits">CRÉDITOS <small>05</small></button><div class="footer">SISTEMA INGLÉS / FRACCIONAL ↔ DECIMAL<br>ORIGINAL PROTOTYPE · SIN TURNO DE SALIDA</div></nav></main>`,
+    `<main class="menu"><div class="hero"><div class="eyebrow">DDI / QUALITY CONTROL DIVISION</div><h1>FRACTION<br><em>SLAYER</em></h1><span class="badge">ESTADÍAS PROFESIONALES • V0.2-ALPHA3</span><p>Primer día. Una fábrica fuera de control.<br>Y una máquina que no sabe redondear.</p><p>La matemática no te impide jugar.<br>Te permite jugar mejor.</p></div><nav class="nav"><button class="primary" id="new">NUEVA PARTIDA <small>01</small></button><button id="continue" ${slot ? "" : "disabled"}>CONTINUAR <small>02</small></button><button id="stats">ESTADÍSTICAS <small>03</small></button><button id="settings">CONFIGURACIÓN <small>04</small></button><button id="credits">CRÉDITOS <small>05</small></button><div class="footer">SISTEMA INGLÉS / FRACCIONAL ↔ DECIMAL<br>ORIGINAL PROTOTYPE · SIN TURNO DE SALIDA</div></nav></main>`,
   );
   button("new", newGame);
   button("continue", async () => {
@@ -360,7 +360,7 @@ function difficulty(name, levelId="workshop") {
 function intro() {
   freeze();
   panel(
-    `<div class="eyebrow">DDI // REGISTRO DE INGRESO</div><h2>BIENVENIDO A QUALITY CONTROL</h2><p>Tu asesor dijo que solo había que medir unas piezas. <b>The Converter</b> tenía otros planes.</p><p><b>Objetivo:</b> ${esc(FS.config.level.intro || "Cruza el pasillo, limpia la arena y calibra la puerta ámbar. La terminal verde da munición; el M.A.D. azul mejora un arma; la escopeta está en la sala inicial.")}</p><p><b>Móvil:</b> joystick flotante izquierdo · arrastra a la derecha para girar · DISPARAR / USAR. Toca ARMAS para elegir sin dejar de caminar.</p><p><b>PC:</b> WASD · clic izquierdo dispara · mouse capturado o arrastre derecho gira · E usa · R recarga · 1/2 armas · Esc pausa. Flechas ← → también giran.</p><div class="row"><button id="enter" class="primary">ESTO SÍ LO VOY A PONER EN EL REPORTE →</button></div>`,
+    `<div class="eyebrow">DDI // REGISTRO DE INGRESO</div><h2>BIENVENIDO A QUALITY CONTROL</h2><p>Tu asesor dijo que solo había que medir unas piezas. <b>The Converter</b> tenía otros planes.</p><p><b>Objetivo:</b> ${esc(FS.config.level.intro || "Cruza el pasillo, limpia la arena y calibra la puerta ámbar. La terminal verde da munición; el M.A.D. azul mejora un arma; la escopeta está en la sala inicial.")}</p><p><b>Móvil:</b> joystick flotante izquierdo · arrastra a la derecha para girar · DISPARAR / USAR. Toca ARMAS para elegir sin dejar de caminar.</p><p><b>PC:</b> WASD · clic izquierdo dispara · mouse capturado o arrastre derecho gira · E usa · R recarga · 1/2/3/4 armas · Esc pausa. Flechas ← → también giran.</p><div class="row"><button id="enter" class="primary">ESTO SÍ LO VOY A PONER EN EL REPORTE →</button></div>`,
   );
   button("enter", resume);
 }
@@ -398,7 +398,7 @@ function statistics(back) {
 
 function credits() {
   panel(
-    `<div class="eyebrow">FRACTION SLAYER / V0.2-ALPHA2</div><h2>CRÉDITOS</h2><p>Diseño y concepto<br><b>Esteban Montaño</b></p><p>Proyecto académico<br><b>Universidad Tecnológica de Ciudad Juárez</b></p><p>Tema: Sistema inglés · Fraccional ↔ Decimal</p><p>Gráficos procedurales y sonidos sintetizados originales.<br>Espacio reservado para futuras atribuciones de assets.</p><p>“La matemática no te impide jugar. Te permite jugar mejor.”</p><button id="back">VOLVER</button>`,
+    `<div class="eyebrow">FRACTION SLAYER / V0.2-ALPHA3</div><h2>CRÉDITOS</h2><p>Diseño y concepto<br><b>Esteban Montaño</b></p><p>Proyecto académico<br><b>Universidad Tecnológica de Ciudad Juárez</b></p><p>Tema: Sistema inglés · Fraccional ↔ Decimal</p><p>Gráficos procedurales y sonidos sintetizados originales.<br>Espacio reservado para futuras atribuciones de assets.</p><p>“La matemática no te impide jugar. Te permite jugar mejor.”</p><button id="back">VOLVER</button>`,
   );
   button("back", mainMenu);
 }
@@ -492,7 +492,7 @@ async function pauseMenu(sync = true) {
   button("resume", resume);
   button("settings", () => settings(() => pauseMenu(false)));
   button("stats", () => statistics(() => pauseMenu(false)));
-  button("restart", async () => applyStart(await rpc("restart", {}, false)));
+  button("restart", async () => applyStart(await rpc("restart", {}, true)));
   button("menu", mainMenu);
 }
 
@@ -501,7 +501,7 @@ function death() {
   panel(
     `<div class="eyebrow">DDI // INCIDENTE NO PLANIFICADO</div><h2 class="error">YOU DIED</h2><p>ESTADÍAS: INCOMPLETAS</p><p>Esto no estaba en el convenio de estadías.</p><div class="row"><button id="restart" class="primary">REINICIAR CHECKPOINT</button><button id="menu">SALIR AL MENÚ</button></div>`,
   );
-  button("restart", async () => applyStart(await rpc("restart", {}, false)));
+  button("restart", async () => applyStart(await rpc("restart", {}, true)));
   button("menu", async () => {
     if (!Bridge.busy) await rpc("menu");
     mainMenu();
@@ -510,10 +510,15 @@ function death() {
 
 function mission(stats) {
   freeze();
+  const canContinue=!!FS.config.level.next_level;
   panel(
-    `<div class="eyebrow">QUALITY CONTROL // TURNO CERRADO</div><h2 class="success">MISSION COMPLETE</h2>${statHTML(stats)}<p>${FS.config.level.teaser ? esc(FS.config.level.teaser).replaceAll("\n", "<br>") : "Primer día de estadías: sobrevivido. The Converter sigue esperando."}</p><div class="row"><button id="export">EXPORTAR PARTIDA</button><button id="menu" class="primary">VOLVER AL MENÚ</button></div>`,
+    `<div class="eyebrow">QUALITY CONTROL // TURNO CERRADO</div><h2 class="success">MISSION COMPLETE</h2>${statHTML(stats)}<p>${FS.config.level.teaser ? esc(FS.config.level.teaser).replaceAll("\n", "<br>") : "Primer día de estadías: sobrevivido. The Converter sigue esperando."}</p>${canContinue ? `<div class="campaign-transfer"><b>DDI EMPLOYEE INVENTORY TRANSFER</b><br>EQUIPMENT RETAINED · M.A.D. RETAINED · PROJECT U.T.C.J. RETAINED</div>` : ''}<div class="row"><button id="export">EXPORTAR PARTIDA</button>${canContinue ? '<button id="next-level" class="primary">CONTINUAR CAMPAÑA →</button>' : ''}<button id="menu" class="${canContinue ? 'quiet' : 'primary'}">VOLVER AL MENÚ</button></div>`,
   );
   button("export", exportSave);
+  button("next-level", async () => {
+    const r=await rpc("next_level",{},false);
+    if (r) {applyStart(r);toast('TRANSFER AUTHORIZED // DESTINATION: PRODUCTION FLOOR');}
+  });
   button("menu", mainMenu);
 }
 async function ask(station, weapon = "pistol") {
@@ -638,18 +643,18 @@ function interact() {
     );
     return;
   }
-  if (kind === "install") {
+  if (kind === "install" || kind === "armory") {
     if (Bridge.busy) return;
     freeze();
     const before=clone(FS.state);
     rpc('interact',{station:st},true,before).then(r=>{
       mergeWorld(r,before); resume();
-      if(r) {toast('POWER RESTORED // LOADER MK-I ONLINE');sound('good');}
+      if(r) {toast(kind==='armory'?'DDI ARMORY // EQUIPMENT RETRIEVED':'POWER RESTORED // LOADER MK-I ONLINE');sound('good');}
     });
     return;
   }
   if (kind === "mad") {
-    const eligible = Object.keys(FS.state.weapons).filter(w => FS.state.weapons[w].mods === 0);
+    const eligible = (FS.config.eligible_weapons || []).filter(w => FS.state.weapons[w]);
     if (!eligible.length) {
       toast('NO COMPATIBLE MODIFICATION AVAILABLE · M.A.D. disponible para después.');
       return;
@@ -659,7 +664,7 @@ function interact() {
       `<div class="eyebrow">M.A.D. // AJUSTE ÚNICO</div><h2>SELECCIONA ARMA</h2><p>El dron admite una calibración. Elige tu mejora.</p><div class="choices">${eligible
         .map(
           (w) =>
-            `<button data-weapon="${w}">${w === "pistol" ? "PISTOLA<br>Precision Barrel · +15% daño" : "ESCOPETA<br>Tight Choke · mejor alcance"}</button>`,
+            `<button data-weapon="${w}">${({pistol:'PISTOLA<br>Precision Barrel · +15% daño',shotgun:'ESCOPETA<br>Tight Choke · mejor alcance',assault:'ASSAULT RIFLE<br>Compensator · mejor control',sawed_off:'SAWED-OFF<br>Magnum Load · +18% daño'})[w] || esc(FS.config.weapons[w]?.name || w)}</button>`,
         )
         .join(
           "",

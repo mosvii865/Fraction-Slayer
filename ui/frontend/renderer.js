@@ -11,10 +11,8 @@ const Render = (() => {
     H = 360,
     zbuf = new Float32Array(W);
   const palette = {
-    loader: "#e4a445", install: "#72d7cb", utcj:"#e9c768", quest_item:"#84ecdf",
-    worker: "#c89a4d",
-    crawler: "#89af54",
-    rivet: "#b55d50",
+    loader: "#e4a445", foreman: "#e08f45", industrial_node:"#76dced", install: "#72d7cb", armory:"#9eb8c4", utcj:"#e9c768", quest_item:"#84ecdf",
+    worker: "#c89a4d", crawler: "#89af54", rivet: "#b55d50", sentinel:"#8f78c9", gunner:"#d85d72",
     mad: "#79dce3",
     terminal: "#6cdbad",
     door: "#eead45",
@@ -24,7 +22,7 @@ const Render = (() => {
     shells: "#d97b4c",
     health: "#d56f66",
     armor: "#669cae",
-    shotgun: "#c2cbd0",
+    shotgun: "#c2cbd0", assault:"#82a7b8", sawed_off:"#d5a36d",
   };
 
   function sprite(type) {
@@ -43,6 +41,20 @@ const Render = (() => {
       g.fillStyle='#182d35';g.fillRect(13,22,23,18);
       g.fillStyle=type==='loader_rear'?'#76edc6':'#e95c39';g.fillRect(17,27,15,9);
       g.fillStyle='#c7d2c2';g.fillRect(12,8,24,10);g.fillRect(2,53,15,6);g.fillRect(31,53,15,6);
+    } else if (type.startsWith('foreman')) {
+      g.fillStyle='#263b43';g.fillRect(5,43,12,20);g.fillRect(31,43,12,20);
+      g.fillStyle=type==='foreman_protected'?'#6bd5e5':'#df8f45';g.fillRect(5,18,38,32);
+      g.fillStyle='#162832';g.fillRect(12,25,24,16);
+      g.fillStyle=type==='foreman_protected'?'#baf5ff':'#ff694e';g.fillRect(18,30,12,6);
+      g.fillStyle='#b9c8c7';g.fillRect(13,8,22,12);g.fillRect(1,28,9,20);g.fillRect(38,28,9,20);
+    } else if (type==='industrial_node') {
+      g.strokeStyle='#76dced';g.lineWidth=3;g.strokeRect(8,15,32,36);
+      g.fillStyle='#1d4f5a';g.fillRect(12,19,24,28);g.fillStyle='#a9f4ff';g.fillRect(19,26,10,14);
+      g.fillStyle='#76dced';g.fillRect(15,53,18,7);
+    } else if (type==='sentinel') {
+      g.fillStyle='#28333f';g.fillRect(17,42,14,20);g.fillRect(7,54,34,6);
+      g.fillStyle='#8f78c9';g.fillRect(8,23,32,21);g.fillStyle='#182630';g.fillRect(13,28,22,11);
+      g.fillStyle='#ff765e';g.fillRect(21,31,6,5);g.fillStyle='#9ba8b0';g.fillRect(35,29,12,6);
     } else if (type==='utcj') {
       g.fillStyle='#dbc777';g.strokeStyle='#dbc777';g.lineWidth=2;g.strokeRect(4,15,40,35);
       g.font='bold 12px monospace';g.textAlign='center';g.fillText('UTCJ',24,34);
@@ -50,7 +62,7 @@ const Render = (() => {
     } else if (type==='quest_item') {
       g.fillStyle='#bdece4';g.fillRect(17,27,15,31);g.fillStyle='#315c61';g.fillRect(20,33,9,18);
       g.fillStyle='#dba64e';g.fillRect(16,26,17,6);g.fillRect(16,54,17,6);
-    } else if (["worker", "rivet", "crawler"].includes(type)) {
+    } else if (["worker", "rivet", "crawler", "gunner"].includes(type)) {
       if (type === "crawler") {
         g.fillStyle = color;
         g.fillRect(8, 37, 33, 17);
@@ -83,14 +95,14 @@ const Render = (() => {
         g.fillRect(16, 16, 18, 4);
         g.fillStyle = "#121f26";
         g.fillRect(23, 20, 9, 6);
-        if (type === "rivet") {
+        if (type === "rivet" || type === "gunner") {
           g.fillStyle = "#84919b";
           g.fillRect(30, 34, 17, 10);
           g.fillStyle = "#ff875e";
           g.fillRect(43, 35, 5, 7);
         }
       }
-    } else if (["terminal", "mad", "cache", "exit", "install"].includes(type)) {
+    } else if (["terminal", "mad", "cache", "exit", "install", "armory"].includes(type)) {
       g.fillStyle = "#273946";
       g.fillRect(10, 48, 29, 13);
       g.fillRect(20, 34, 9, 20);
@@ -111,7 +123,7 @@ const Render = (() => {
         "EXIT" :
         type === "cache" ?
         "QC+" :
-        type === "install" ? "POWER" : "QC",
+        type === "install" ? "POWER" : type === "armory" ? "ARM" : "QC",
         24,
         25,
       );
@@ -278,11 +290,14 @@ const Render = (() => {
       }
     }
     fs.debugStage = 'RENDER_ENTITIES';
+    const activeForeman=s.enemies.find(e=>e.type==='foreman'&&e.active&&e.hp>0&&e.shielded);
+    const nodeObjects=activeForeman ? (fs.config.level.boss_nodes||[]).map((n,i)=>({...n,type:'industrial_node',node_hp:i===0?activeForeman.node_a_hp:activeForeman.node_b_hp})).filter(n=>n.node_hp>0) : [];
     const objects = [
       ...s.enemies.filter((e) => e.active && e.hp > 0),
+      ...nodeObjects,
       ...fs.config.level.items.filter((i) => !s.collected.includes(i.id)).map(i => ({
         ...i,
-        type: i.type === 'weapon' ? i.weapon : i.type === 'ammo' ? (i.weapon === 'shotgun' ? 'shells' : 'pistol') : i.type
+        type: i.type === 'weapon' ? i.weapon : i.type === 'ammo' ? (['shotgun','sawed_off'].includes(i.weapon) ? 'shells' : i.weapon === 'assault' ? 'assault' : 'pistol') : i.type
       })),
       ...fs.config.level.secrets.filter(i => i.on_shot && !s.progress.secrets[i.id]).map(i => ({
         ...i,
@@ -308,16 +323,16 @@ const Render = (() => {
       if (depth < 0.12) continue;
       const sideways = -ox * dy + oy * dx;
       const center = (W / 2) * (1 + sideways / (plane * depth));
-      const sh = (H / depth) * (o.type === "loader" ? 1.4 : o.type === "crawler" ? 0.85 : 1),
+      const sh = (H / depth) * (o.type === "loader" ? 1.4 : o.type === "foreman" ? 1.5 : o.type === "crawler" ? 0.85 : o.type === "industrial_node" ? .9 : 1),
         sw = sh * 0.75;
       let top = H / 2 - sh / 2;
-      if (["pistol", "shells", "health", "armor", "shotgun"].includes(o.type))
+      if (["pistol", "shells", "health", "armor", "shotgun", "assault", "sawed_off"].includes(o.type))
         top += sh * 0.03;
       let visual=o.type;
       if (o.type==='loader') {
         const a=Math.atan2(p.y-o.y,p.x-o.x)-o.facing;
         visual=o.stun_time>0?'loader_stunned':['preparing','slamming'].includes(o.charge_state)?'loader_warning':Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))>Math.PI-1?'loader_rear':'loader';
-      }
+      } else if (o.type==='foreman') visual=o.shielded?'foreman_protected':'foreman';
       const img = sprite(visual);
       for (
         let col = Math.max(0, Math.floor(center - sw / 2)); col < Math.min(W, center + sw / 2); col++
@@ -352,7 +367,7 @@ const Render = (() => {
     ctx.save();
     ctx.translate(cx, wy);
     ctx.scale(scale, scale);
-    const shotgun = s.weapon === "shotgun";
+    const shotgun = s.weapon === "shotgun", assault=s.weapon==='assault', sawed=s.weapon==='sawed_off';
     ctx.fillStyle = "#8a674a";
     ctx.fillRect(-35, -45, 42, 65);
     ctx.fillStyle = "#243943";
@@ -364,10 +379,11 @@ const Render = (() => {
     ctx.fillStyle = "#a9bab6";
     ctx.fillRect(-14, -83, 5, 46);
     if (shotgun) {
-      ctx.fillStyle = "#526d74";
-      ctx.fillRect(9, -88, 14, 73);
-      ctx.fillStyle = "#a17644";
-      ctx.fillRect(-22, -44, 49, 19);
+      ctx.fillStyle = "#526d74";ctx.fillRect(9, -88, 14, 73);ctx.fillStyle = "#a17644";ctx.fillRect(-22, -44, 49, 19);
+    } else if (assault) {
+      ctx.fillStyle='#526d74';ctx.fillRect(8,-91,28,10);ctx.fillRect(19,-76,10,55);ctx.fillStyle='#6e5542';ctx.fillRect(-25,-46,54,13);
+    } else if (sawed) {
+      ctx.fillStyle='#a17644';ctx.fillRect(-28,-48,58,19);ctx.fillStyle='#6c818a';ctx.fillRect(-18,-91,12,55);ctx.fillRect(3,-91,12,55);
     }
     if (s.weapons[s.weapon].mods) {
       ctx.fillStyle = "#78e0e8";
@@ -415,7 +431,12 @@ const Render = (() => {
           "#152c35";
         ctx.fillRect(ox + x * k, oy + y * k, k - 0.4, k - 0.4);
       }
+    for (const belt of (fs.config.level.conveyors || [])) {
+      const z=belt.zone;ctx.fillStyle=belt.kind==='fast'?'#b28a42':'#486f78';ctx.globalAlpha=.7;
+      ctx.fillRect(ox+z[0]*k,oy+z[1]*k,Math.max(1,(z[2]-z[0])*k),Math.max(1,(z[3]-z[1])*k));ctx.globalAlpha=1;
+    }
     for (const st of fs.config.level.stations) {
+      if (st.hidden_on_minimap && !fs.state.progress.stations[st.id]) continue;
       ctx.fillStyle = palette[st.kind] || "#83ddea";
       ctx.fillRect(ox + st.x * k - 1, oy + st.y * k - 1, 2, 2);
     }

@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.2-alpha3 — The Factory — 2026-09-25
+
+- Nuevo Level 02 con nueve zonas, conveyors, 30/42 enemigos y matemáticas hasta 1/16.
+- Persistencia de campaña: armas, MOD I, UTCJ y recursos entre niveles con Transition Resupply.
+- SAVE_VERSION 3 con migración de saves v2.
+- Assault Rifle, Sawed-Off y DDI Emergency Armory.
+- Sentinel y Corrupted Gunner.
+- Rush de tres waves + dos Production Controls.
+- Foreman MK-II con burst, ram, slam, support y Protected Mode mediante dos Industrial Nodes.
+- PROJECT U.T.C.J. independiente y recolectable en cualquier orden.
+- Lab Transit exige controles desactivados + Foreman derrotado; teaser de The Laboratory sin implementarlo.
+- 116 tests Python, JS syntax y compileall aprobados; playtest físico/Streamlit real pendiente.
+
 ## v0.2-alpha2 — The Workshop — 2026-09-24
 
 - Primer nivel de campaña: ocho zonas, 21/30 enemigos, cinco calibraciones, dos M.A.D., fusible y energía.
@@ -50,3 +63,10 @@
 ## v0.1 — 2026-09-22
 
 - Primer prototipo jugable con mapa industrial, dos dificultades, armas, enemigos, preguntas Python, M.A.D., checkpoints y guardado.
+
+### v0.2-alpha3 candidate2 — Hotfix de auditoría — 2026-09-26
+- Preserva armas/M.A.D./UTCJ al reiniciar checkpoint y sincroniza snapshot antes de restart.
+- La rush exige Assault Rifle + Sawed-Off; Production Line B queda integrada al progreso principal.
+- Lab Transit recibe compuerta física hasta completar Production Controls + Foreman.
+- Mejoras de checkpoint pre-Foreman, navegación, minimapa secreto y validación de campaña.
+- Factory revision 2. Suite local: 126 tests Python.

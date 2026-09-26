@@ -156,4 +156,5 @@ def workshop():
             dict(until='workshop_complete',text='POWER RESTORED → REACH THE ELEVATOR')],
         intro='LEVEL 01 — THE WORKSHOP. Cruza Assembly Floor y recoge la escopeta. Calibration → Maintenance → Power Control: recupera el fusible y llévalo a Generator Hall. Restaura la energía, detén al Loader y alcanza el elevador. Las flechas del minimapa señalan el siguiente destino.',
         navigation=[dict(until='shotgun_collected',x=14.5,y=6.5),dict(until='assembly_cleared',x=20,y=6),dict(until='main_power_fuse_collected',x=39.5,y=10.5),dict(until='power_restored',x=28.5,y=21.5),dict(until='loader_defeated',x=28,y=26),dict(until='workshop_complete',x=18.5,y=25.5)],
-        campaign_secrets=4,teaser='PRODUCTION OUTPUT: 212%\nSHUTDOWN REQUEST: DENIED\nLEVEL 02 — THE FACTORY')
+        campaign_secrets=4,next_level='factory',
+        teaser='PRODUCTION OUTPUT: 212%\nSHUTDOWN REQUEST: DENIED\nLEVEL 02 — THE FACTORY')

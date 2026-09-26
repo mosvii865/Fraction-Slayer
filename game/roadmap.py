@@ -1,17 +1,19 @@
-"""Campaign metadata. Workshop and its first mark ship in alpha2; later rewards remain locked."""
+"""Campaign metadata. Workshop and Factory ship through alpha3; later rewards remain locked."""
 
-IMPLEMENTED_LEVELS = ["The Workshop"]
-
-FUTURE_LEVELS = [
+CAMPAIGN_LEVELS = [
     "The Workshop",
     "The Factory",
     "The Laboratory",
     "The Foundry",
     "The Converter",
 ]
+
+IMPLEMENTED_LEVELS = ["The Workshop", "The Factory"]
+FUTURE_LEVELS = ["The Laboratory", "The Foundry", "The Converter"]
+
 PROJECT_UTCJ = {
     "required_marks": 4,
-    "eligible_levels": FUTURE_LEVELS[:4],
+    "eligible_levels": CAMPAIGN_LEVELS[:4],
     "trigger": "shoot_hidden_mark",
     "reward_weapon": "el_toro",
 }

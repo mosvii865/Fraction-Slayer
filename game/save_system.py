@@ -3,16 +3,37 @@
 import copy
 import json
 import math
-from .nivel import level_config
+from .nivel import level_config, LEVELS
 from .armas import WEAPONS
 from .estadisticas import new_stats
 from .world import solid, initial_progress
 
-SAVE_VERSION = 2
+SAVE_VERSION = 3
 
 
 class SaveError(ValueError):
     pass
+
+
+
+def _campaign_from_legacy(state):
+    stats = new_stats()
+    completed = []
+    if state.get("progress", {}).get("complete"):
+        completed = [state.get("level_id")]
+        stats = copy.deepcopy(state.get("stats", stats))
+    return {
+        "current_level": state.get("level_id", "workshop"),
+        "completed_levels": [x for x in completed if x],
+        "utcj_found": list(dict.fromkeys(state.get("progress", {}).get("utcj_found", []))),
+        "global_stats": stats,
+    }
+
+
+def _migrate_v2_state(state):
+    state = copy.deepcopy(state)
+    state.setdefault("campaign", _campaign_from_legacy(state))
+    return state
 
 
 def number(value, low, high):
@@ -65,6 +86,34 @@ def validate_state(state):
         number(timestamp, 0, s["stats"]["seconds"])
         if not s["progress"]["triggers"][ident]:
             raise SaveError("Evento no activado")
+    campaign = s.get("campaign")
+    if not isinstance(campaign, dict) or campaign.get("current_level") != s["level_id"]:
+        raise SaveError("Campaña inválida")
+    completed = campaign.get("completed_levels")
+    if (not isinstance(completed, list) or len(completed) != len(set(completed))
+            or any(not isinstance(x, str) or x not in LEVELS for x in completed)):
+        raise SaveError("Campaña inválida")
+    campaign_utcj = campaign.get("utcj_found")
+    registered_utcj = set()
+    for registered_level in LEVELS:
+        try:
+            cfg = level_config(s["difficulty"], registered_level)
+        except ValueError:
+            continue
+        registered_utcj.update(
+            secret["id"] for secret in cfg.get("secrets", []) if secret.get("kind") == "utcj"
+        )
+    if (not isinstance(campaign_utcj, list) or len(campaign_utcj) != len(set(campaign_utcj))
+            or len(campaign_utcj) > 4
+            or any(not isinstance(x, str) or x not in registered_utcj for x in campaign_utcj)):
+        raise SaveError("PROJECT U.T.C.J. inválido")
+    global_stats = campaign.get("global_stats")
+    if not isinstance(global_stats, dict) or set(global_stats) != set(new_stats()):
+        raise SaveError("Estadísticas de campaña inválidas")
+    for key in new_stats():
+        number(global_stats[key], 0, 1e9)
+    if global_stats["correct"] > global_stats["attempted"]:
+        raise SaveError("Estadísticas de campaña inválidas")
     p = s["player"]
     number(p["x"], 0, level["width"] - 1e-6)
     number(p["y"], 0, level["height"] - 1e-6)
@@ -124,6 +173,13 @@ def validate_state(state):
             for key in ("phase_time", "cooldown"):
                 number(e.get(key, 0), 0, 60)
             number(e.get("attack_index", 0), 0, 1000000)
+        if e["type"] == "foreman":
+            if e.get("boss_mode") not in ("offensive", "protected", "ramming", "slamming", "recovering"):
+                raise SaveError("Estado Foreman inválido")
+            if type(e.get("shielded")) is not bool or type(e.get("support_deployed", False)) is not bool:
+                raise SaveError("Estado Foreman inválido")
+            for key, maximum in (("shield_cycles", 2), ("node_a_hp", 200), ("node_b_hp", 200), ("phase_time", 60), ("attack_index", 1000000), ("cooldown", 60)):
+                number(e.get(key, 0), 0, maximum)
         if e.get("last_known") is not None:
             number(e["last_known"]["x"], 0, level["width"])
             number(e["last_known"]["y"], 0, level["height"])
@@ -167,12 +223,18 @@ def load_save(data):
             raise SaveError("Archivo demasiado grande")
         if isinstance(data, str):
             data = json.loads(data)
-        if data["version"] != SAVE_VERSION:
+        version = data["version"]
+        if version not in (2, SAVE_VERSION):
             raise SaveError(
                 "Versión de guardado incompatible. Inicia una partida nueva."
             )
-        state = validate_state(data["state"])
-        checkpoint = validate_state(data["checkpoint_state"])
+        raw_state = data["state"]
+        raw_checkpoint = data["checkpoint_state"]
+        if version == 2:
+            raw_state = _migrate_v2_state(raw_state)
+            raw_checkpoint = _migrate_v2_state(raw_checkpoint)
+        state = validate_state(raw_state)
+        checkpoint = validate_state(raw_checkpoint)
         if data["level_id"] != state["level_id"] or any(
             state[k] != checkpoint[k]
             for k in ("level_id", "level_revision", "difficulty", "name", "run_id")

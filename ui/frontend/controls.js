@@ -248,7 +248,13 @@ const InputControls = (window.InputControls = (() => {
   actionButton($('#reload-touch'), reload);
   actionButton($('#reload'), reload);
   actionButton($('#weapon-toggle'), togglePicker);
-  actionButton($('#weapon'), () => touchMode ? togglePicker() : selectWeapon(FS.state.weapon === 'pistol' ? 'shotgun' : 'pistol'));
+  actionButton($('#weapon'), () => {
+    if (touchMode) return togglePicker();
+    const order=['pistol','shotgun','assault','sawed_off'].filter(w=>FS.state.weapons[w]);
+    if (!order.length) return;
+    const i=Math.max(0,order.indexOf(FS.state.weapon));
+    selectWeapon(order[(i+1)%order.length]);
+  });
   actionButton($('#weapon-close'), closePicker);
   document.querySelectorAll('[data-select-weapon]').forEach(b => actionButton(b, () => {
     selectWeapon(b.dataset.selectWeapon);
@@ -344,6 +350,8 @@ window.addEventListener("keydown", (e) => {
       if (e.code === "KeyR") reload();
       if (e.code === "Digit1") selectWeapon("pistol");
       if (e.code === "Digit2") selectWeapon("shotgun");
+      if (e.code === "Digit3") selectWeapon("assault");
+      if (e.code === "Digit4") selectWeapon("sawed_off");
       if (e.code === "Escape") pauseMenu();
       if (e.code === "Space") shoot();
     }

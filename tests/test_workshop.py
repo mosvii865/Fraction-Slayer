@@ -8,7 +8,7 @@ import pytest
 from game.engine import GameEngine
 from game.nivel import level_config
 from game.world import condition, advance, pickup, solid, entity
-from game.save_system import load_save, validate_state, SaveError
+from game.save_system import load_save, validate_state, SaveError, SAVE_VERSION
 from game.preguntas import generate_question
 
 IDS=itertools.count()
@@ -158,11 +158,14 @@ def test_utcj_secret_no_kill_and_save_respawn():
 
 def test_old_v2_still_loads_and_v1_rejected():
     e=GameEngine();call(e,'new',name='Legacy',difficulty='clasico')
-    old=e.pack()['save'];assert old['version']==2
+    old=e.pack()['save'];assert old['version']==SAVE_VERSION
     assert 'trigger_times' not in old['state']['progress']
     assert load_save(old)[0]['level_id']=='industrial_test'
-    old['version']=1
-    with pytest.raises(SaveError):load_save(old)
+    legacy=copy.deepcopy(old);legacy['version']=2
+    legacy['state'].pop('campaign',None);legacy['checkpoint_state'].pop('campaign',None)
+    assert load_save(legacy)[0]['campaign']['current_level']=='industrial_test'
+    legacy['version']=1
+    with pytest.raises(SaveError):load_save(legacy)
 
 
 def test_install_requires_fuse_and_is_not_math():

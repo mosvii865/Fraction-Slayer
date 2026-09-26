@@ -812,3 +812,7 @@ select {font:inherit; background:#10232c; color:#e6ece8; border:1px solid #50828
 #app:not(.is-playing) #bossbar {display:none;}
 #objective {text-overflow:ellipsis;overflow:hidden;white-space:nowrap;}
 #app.is-playing #bossbar:not(.hidden) ~ #toast {top:calc(87px + var(--safe-top));max-width:42%;font-size:11px;padding:6px 8px;}
+
+/* v0.2-alpha3 campaign / Factory additions */
+#weapon-picker {max-height:min(72vh,520px);overflow-y:auto;overscroll-behavior:contain;}
+.campaign-transfer {margin:12px 0;padding:10px;border:1px solid #6f8f92;background:#0a1b22;color:#cfe4df;font:11px/1.55 monospace;}

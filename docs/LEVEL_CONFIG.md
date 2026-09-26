@@ -144,3 +144,12 @@ Los tests artificiales cubren contratos, no sustituyen la validación del layout
 - `objective_hints`, `zones`, `navigation`, `intro`, `teaser`, `campaign_secrets` y `reward_label` son presentación opcional.
 - Loader persiste `phase_time`, `attack_index`, `cooldown` y fases `preparing`, `charging`, `blocked`, `slamming`, `recovering`; viejos enemigos no necesitan estos campos. Catálogo Loader propio de Workshop, sin alterar HP/IA de otros niveles.
 - No cambia SAVE_VERSION ni la revisión 1 de Industrial Test. Un checkpoint ahora rechaza explícitamente HP cero además de los controles de seguridad existentes.
+
+
+## Extensiones usadas por Factory (alpha3)
+
+Factory reutiliza el contrato data-driven e incorpora `conveyors` y `boss_nodes`. Los conveyors son registros `{id, zone, dx, dy, speed, kind}` consumidos por realtime con colisión normal. `boss_nodes` declara los objetivos físicos de Foreman sin convertirlos en enemigos.
+
+El bloque de campaña vive en state/save y no dentro del level config: `current_level`, `completed_levels`, `utcj_found` y `global_stats`. Los flags/objetos específicos del nivel continúan en `progress`, `inventory`, `enemies` y `collected`.
+
+`transition_resupply` define pisos al cambiar de nivel (`min_hp` y mínimos de reserva por arma); nunca reduce recursos existentes. `next_level` solo aparece en niveles cuyo siguiente nivel ya está implementado.

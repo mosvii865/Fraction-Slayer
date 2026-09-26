@@ -34,6 +34,57 @@ if not LOGGER.handlers:
 LOGGER.setLevel(logging.INFO)
 LOGGER.propagate = False
 
+def _restore_permanent_progress(current, restored, level):
+    """Keep campaign acquisitions across checkpoint restart without keeping local combat progress."""
+    current_weapons = current.get("weapons", {})
+    for weapon, data in current_weapons.items():
+        if weapon not in restored["weapons"]:
+            restored["weapons"][weapon] = deepcopy(data)
+        else:
+            restored["weapons"][weapon]["mods"] = max(
+                restored["weapons"][weapon].get("mods", 0), data.get("mods", 0)
+            )
+
+    # Weapon pickups represent permanent ownership and must not respawn after death.
+    permanent_item_ids = {
+        item["id"]
+        for item in level.get("items", [])
+        if item.get("type") == "weapon" and item.get("id") in current.get("collected", [])
+    }
+    restored["collected"] = list(dict.fromkeys([*restored.get("collected", []), *permanent_item_ids]))
+
+    # M.A.D. upgrades are campaign decisions. Preserve consumption together with the mod.
+    permanent_station_ids = {
+        st["id"] for st in level.get("stations", []) if st.get("kind") in ("mad", "armory")
+    }
+    for ident in permanent_station_ids:
+        if current.get("progress", {}).get("stations", {}).get(ident):
+            restored["progress"]["stations"][ident] = True
+
+    # UTCJ signals are campaign secrets. Re-apply local secret state so the logo cannot be farmed.
+    campaign = restored.get("campaign", {})
+    current_campaign = current.get("campaign", {})
+    found = list(dict.fromkeys([
+        *campaign.get("utcj_found", []),
+        *current_campaign.get("utcj_found", []),
+    ]))
+    campaign["utcj_found"] = found
+    local_utcj = {s["id"] for s in level.get("secrets", []) if s.get("kind") == "utcj"}
+    old_local = set(restored["progress"].get("utcj_found", []))
+    for ident in found:
+        if ident in local_utcj:
+            restored["progress"]["secrets"][ident] = True
+            if ident not in restored["progress"]["utcj_found"]:
+                restored["progress"]["utcj_found"].append(ident)
+            if ident not in restored["report"]["project_utcj"]:
+                restored["report"]["project_utcj"].append(ident)
+    newly_restored = set(restored["progress"].get("utcj_found", [])) - old_local
+    restored["stats"]["secrets"] += len(newly_restored)
+
+    if current.get("weapon") in restored["weapons"]:
+        restored["weapon"] = current["weapon"]
+    return restored
+
 
 class GameEngine:
     def __init__(self):
@@ -103,6 +154,10 @@ class GameEngine:
                 if enemy["type"] == "loader":
                     for key in ("phase_time", "attack_index", "cooldown"):
                         enemy[key] = deepcopy(incoming.get(key, 0))
+                if enemy["type"] == "foreman":
+                    for key in ("boss_mode", "shielded", "shield_cycles", "node_a_hp", "node_b_hp",
+                                "phase_time", "attack_index", "cooldown", "support_deployed"):
+                        enemy[key] = deepcopy(incoming.get(key, enemy.get(key)))
         for key in ("seconds", "damage", "ammo_used"):
             s["stats"][key] = max(s["stats"][key], snapshot["stats"][key])
         s["stats"]["kills"] = sum(e["hp"] <= 0 for e in s["enemies"])
@@ -125,8 +180,11 @@ class GameEngine:
             config=self.config(),
             stats={
                 **summary(self.state["stats"]),
-                "utcj_found": len(self.state["progress"]["utcj_found"]),
-                "utcj_display": (f'{len(self.state["progress"]["utcj_found"])}/{self.level()["campaign_secrets"]}' if self.level().get("campaign_secrets") else len(self.state["progress"]["utcj_found"])) if self.state["progress"]["utcj_found"] else "???",
+                "utcj_found": len(self.state.get("campaign", {}).get("utcj_found", self.state["progress"]["utcj_found"])),
+                "utcj_display": (
+                    f'{len(self.state.get("campaign", {}).get("utcj_found", self.state["progress"]["utcj_found"]))}/{self.level().get("campaign_secrets", 4)}'
+                    if self.state.get("campaign", {}).get("utcj_found", self.state["progress"]["utcj_found"]) else "???"
+                ),
             },
             save=make_save(self.state, self.checkpoint),
             **extra
@@ -196,6 +254,10 @@ class GameEngine:
                 inventory={"quest_items": {}, "key_items": {}},
                 stats=new_stats(),
                 progress=initial_progress(level),
+                campaign=dict(
+                    current_level=level["id"], completed_levels=[], utcj_found=[],
+                    global_stats=new_stats(),
+                ),
                 report=dict(
                     observations=[], incidents=[], measurements=[], project_utcj=[]
                 ),
@@ -220,7 +282,8 @@ class GameEngine:
             weapon = data.get("weapon", "pistol")
             p = self.state["player"]
             point = station["interaction_point"]
-            if station["kind"] == "exit" or (station["kind"] == "install") != (action == "interact"):
+            direct_interaction = station["kind"] in ("install", "armory")
+            if station["kind"] == "exit" or direct_interaction != (action == "interact"):
                 raise ValueError("Esta estación no tiene calibración")
             if math.hypot(p["x"] - point["x"], p["y"] - point["y"]) > station[
                 "interaction_distance"
@@ -285,6 +348,39 @@ class GameEngine:
                     else ident
                 ),
             )
+        if action == "next_level":
+            if not self.state["progress"]["complete"]:
+                raise ValueError("Completa el nivel antes de continuar")
+            next_id = level.get("next_level")
+            if not next_id:
+                raise ValueError("El siguiente nivel todavía no está disponible")
+            next_level = level_config(self.state["difficulty"], next_id)
+            cp = min(next_level["checkpoints"], key=lambda c: c["order"])
+            carried_weapons = deepcopy(self.state["weapons"])
+            resupply = next_level.get("transition_resupply", {})
+            for w, minimum in resupply.get("ammo", {}).items():
+                if w in carried_weapons:
+                    carried_weapons[w]["reserve"] = max(carried_weapons[w]["reserve"], int(minimum))
+            campaign = deepcopy(self.state["campaign"])
+            campaign["current_level"] = next_id
+            hp = max(self.state["player"]["hp"], resupply.get("min_hp", 60))
+            hp = min(next_level["player_config"]["max_hp"], hp)
+            armor = min(next_level["player_config"]["max_armor"], self.state["player"]["armor"])
+            selected = self.state["weapon"] if self.state["weapon"] in carried_weapons else next(iter(carried_weapons))
+            self.state = dict(
+                run_id=self.state["run_id"], name=self.state["name"], difficulty=self.state["difficulty"],
+                level_id=next_id, level_revision=next_level["revision"], checkpoint=cp["id"],
+                player=dict(**cp["respawn_position"], angle=cp["respawn_angle"], hp=hp, armor=armor, grace=0),
+                weapon=selected, weapons=carried_weapons, enemies=next_level["enemies"], collected=[],
+                inventory={"quest_items": {}, "key_items": {}}, stats=new_stats(),
+                progress=initial_progress(next_level), campaign=campaign,
+                report=dict(observations=[], incidents=[], measurements=[], project_utcj=list(campaign["utcj_found"])),
+            )
+            self.state = validate_state(advance(self.state, next_level))
+            self.checkpoint = deepcopy(self.state)
+            self.question = None
+            self.context = None
+            return self.pack(kind="transition", transition=dict(from_level=level["id"], to_level=next_id))
         if action == "checkpoint":
             cp = entity(level, "checkpoints", data["checkpoint"])
             current = entity(level, "checkpoints", self.state["checkpoint"])
@@ -307,7 +403,8 @@ class GameEngine:
             self.checkpoint = validate_state(self.checkpoint)
             return self.pack(kind="checkpoint")
         if action == "restart":
-            self.state = deepcopy(self.checkpoint)
+            current = deepcopy(self.state)
+            self.state = _restore_permanent_progress(current, deepcopy(self.checkpoint), level)
             rules = level["respawn_rules"]
             p = self.state["player"]
             p["hp"] = min(
@@ -333,6 +430,17 @@ class GameEngine:
                     "Completa los objetivos del nivel y acércate a la salida"
                 )
             self.state["progress"]["complete"] = True
+            campaign = self.state["campaign"]
+            if self.state["level_id"] not in campaign["completed_levels"]:
+                campaign["completed_levels"].append(self.state["level_id"])
+                totals = campaign["global_stats"]
+                for key, value in self.state["stats"].items():
+                    if key == "best_streak":
+                        totals[key] = max(totals[key], value)
+                    elif key == "streak":
+                        totals[key] = value
+                    else:
+                        totals[key] += value
             self.state = validate_state(advance(self.state, level))
             return self.pack(kind="finish")
         if action in ("sync", "pause", "menu"):

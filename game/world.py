@@ -70,6 +70,9 @@ def condition(rule, state, level, event=None):
         r = rule["enemy_hp_below"]
         e = next((e for e in state["enemies"] if e["id"] == r["id"]), None)
         return bool(e and e["active"] and 0 <= e["hp"] <= level["enemy_types"][e["type"]]["hp"] * r["ratio"])
+    if "enemy_alive" in rule:
+        e = next((e for e in state["enemies"] if e["id"] == rule["enemy_alive"]), None)
+        return bool(e and e["active"] and e["hp"] > 0)
     if "trigger_elapsed" in rule:
         r = rule["trigger_elapsed"]
         start = state["progress"].get("trigger_times", {}).get(r["id"])
@@ -165,6 +168,9 @@ def discover_secret(state, level, ident):
     if secret["kind"] == "utcj":
         state["progress"]["utcj_found"].append(ident)
         state["report"]["project_utcj"].append(ident)
+        campaign = state.get("campaign")
+        if campaign is not None and ident not in campaign["utcj_found"]:
+            campaign["utcj_found"].append(ident)
 
 
 def rewards(state, level, items, weapon=None):
@@ -197,6 +203,12 @@ def rewards(state, level, items, weapon=None):
                 if w in candidate["weapons"]:
                     a = candidate["weapons"][w]
                     a["reserve"] = max(a["reserve"], n - a["loaded"])
+        elif t == "recover_weapon":
+            w = reward["weapon"]
+            if w not in WEAPONS:
+                raise ValueError("Arma de recuperación inválida")
+            if w not in candidate["weapons"]:
+                candidate["weapons"][w] = dict(loaded=WEAPONS[w]["capacity"], reserve=int(reward.get("reserve", 0)), mods=0)
         else:
             pickup(candidate, reward, level)
     return candidate
