@@ -1,0 +1,428 @@
+[
+  {
+    "viewport": "desktop",
+    "weapon": "sawed_off",
+    "pickup": {
+      "collected": true,
+      "ammo": {
+        "loaded": 2,
+        "reserve": 14,
+        "mods": 0
+      }
+    },
+    "fireFrames": [
+      "sawed_off.png",
+      "sawed_off_fire.png"
+    ],
+    "reloadFrames": [
+      "sawed_off.png",
+      "sawed_off_break_open.png",
+      "sawed_off_close.png",
+      "sawed_off_reload_insert.png"
+    ],
+    "scaleStable": true,
+    "ammoBefore": {
+      "loaded": 1,
+      "reserve": 14,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 2,
+      "reserve": 13,
+      "mods": 0
+    },
+    "switchReset": true
+  },
+  {
+    "viewport": "desktop",
+    "weapon": "assault",
+    "pickup": {
+      "collected": true,
+      "ammo": {
+        "loaded": 30,
+        "reserve": 54,
+        "mods": 0
+      }
+    },
+    "fireFrames": [
+      "assault.png",
+      "assault_fire.png"
+    ],
+    "reloadFrames": [
+      "assault.png",
+      "assault_reload_end.png",
+      "assault_reload_start.png",
+      "assault_reload_swap.png"
+    ],
+    "scaleStable": true,
+    "ammoBefore": {
+      "loaded": 29,
+      "reserve": 54,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 30,
+      "reserve": 53,
+      "mods": 0
+    },
+    "switchReset": true
+  },
+  {
+    "viewport": "desktop",
+    "weapon": "sniper",
+    "pickup": {
+      "collected": true,
+      "ammo": {
+        "loaded": 5,
+        "reserve": 15,
+        "mods": 0
+      }
+    },
+    "fireFrames": [
+      "sniper.png",
+      "sniper_fire.png",
+      "sniper_bolt_back.png",
+      "sniper_bolt_forward.png"
+    ],
+    "reloadFrames": [
+      "sniper.png",
+      "sniper_reload.png"
+    ],
+    "scaleStable": true,
+    "ammoBefore": {
+      "loaded": 4,
+      "reserve": 15,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 5,
+      "reserve": 14,
+      "mods": 0
+    },
+    "switchReset": true
+  },
+  {
+    "viewport": "desktop",
+    "weapon": "lmg",
+    "pickup": {
+      "collected": true,
+      "ammo": {
+        "loaded": 60,
+        "reserve": 120,
+        "mods": 0
+      }
+    },
+    "fireFrames": [
+      "lmg.png",
+      "lmg_fire.png"
+    ],
+    "reloadFrames": [
+      "lmg.png",
+      "lmg_reload_box.png",
+      "lmg_reload_end.png",
+      "lmg_reload_start.png"
+    ],
+    "scaleStable": true,
+    "ammoBefore": {
+      "loaded": 59,
+      "reserve": 120,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 60,
+      "reserve": 119,
+      "mods": 0
+    },
+    "switchReset": true
+  },
+  {
+    "viewport": "desktop",
+    "weapon": "rocket",
+    "pickup": {
+      "collected": true,
+      "ammo": {
+        "loaded": 1,
+        "reserve": 5,
+        "mods": 0
+      }
+    },
+    "fireFrames": [
+      "rocket.png",
+      "rocket_fire.png"
+    ],
+    "reloadFrames": [
+      "rocket.png",
+      "rocket_reload_close.png",
+      "rocket_reload_insert.png",
+      "rocket_reload_open.png"
+    ],
+    "scaleStable": true,
+    "ammoBefore": {
+      "loaded": 0,
+      "reserve": 5,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 1,
+      "reserve": 4,
+      "mods": 0
+    },
+    "switchReset": true
+  },
+  {
+    "viewport": "desktop",
+    "boss": "crucible",
+    "poses": {
+      "idle": {
+        "key": "boss_idle.png",
+        "scale": 1,
+        "height": 162.45000000000002,
+        "bottom": 225.625
+      },
+      "walk_1": {
+        "key": "boss_walk_1.png",
+        "scale": 1,
+        "height": 162.45000000000002,
+        "bottom": 225.625
+      },
+      "walk_2": {
+        "key": "boss_walk_2.png",
+        "scale": 1,
+        "height": 162.45000000000002,
+        "bottom": 225.625
+      },
+      "attack": {
+        "key": "boss_attack.png",
+        "scale": 1,
+        "height": 162.45000000000002,
+        "bottom": 225.625
+      },
+      "hurt": {
+        "key": "boss_hurt.png",
+        "scale": 1,
+        "height": 162.45000000000002,
+        "bottom": 225.625
+      },
+      "death": {
+        "key": "boss_death.png",
+        "scale": 1,
+        "height": 162.45000000000002,
+        "bottom": 225.625
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "mobile",
+    "weapon": "sawed_off",
+    "pickup": {
+      "collected": true,
+      "ammo": {
+        "loaded": 2,
+        "reserve": 14,
+        "mods": 0
+      }
+    },
+    "fireFrames": [
+      "sawed_off.png",
+      "sawed_off_fire.png"
+    ],
+    "reloadFrames": [
+      "sawed_off.png",
+      "sawed_off_break_open.png",
+      "sawed_off_close.png",
+      "sawed_off_reload_insert.png"
+    ],
+    "scaleStable": true,
+    "ammoBefore": {
+      "loaded": 1,
+      "reserve": 14,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 2,
+      "reserve": 13,
+      "mods": 0
+    },
+    "switchReset": true
+  },
+  {
+    "viewport": "mobile",
+    "weapon": "assault",
+    "pickup": {
+      "collected": true,
+      "ammo": {
+        "loaded": 30,
+        "reserve": 54,
+        "mods": 0
+      }
+    },
+    "fireFrames": [
+      "assault.png",
+      "assault_fire.png"
+    ],
+    "reloadFrames": [
+      "assault.png",
+      "assault_reload_end.png",
+      "assault_reload_start.png",
+      "assault_reload_swap.png"
+    ],
+    "scaleStable": true,
+    "ammoBefore": {
+      "loaded": 29,
+      "reserve": 54,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 30,
+      "reserve": 53,
+      "mods": 0
+    },
+    "switchReset": true
+  },
+  {
+    "viewport": "mobile",
+    "weapon": "sniper",
+    "pickup": {
+      "collected": true,
+      "ammo": {
+        "loaded": 5,
+        "reserve": 15,
+        "mods": 0
+      }
+    },
+    "fireFrames": [
+      "sniper.png",
+      "sniper_fire.png",
+      "sniper_bolt_back.png",
+      "sniper_bolt_forward.png"
+    ],
+    "reloadFrames": [
+      "sniper.png",
+      "sniper_reload.png"
+    ],
+    "scaleStable": true,
+    "ammoBefore": {
+      "loaded": 4,
+      "reserve": 15,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 5,
+      "reserve": 14,
+      "mods": 0
+    },
+    "switchReset": true
+  },
+  {
+    "viewport": "mobile",
+    "weapon": "lmg",
+    "pickup": {
+      "collected": true,
+      "ammo": {
+        "loaded": 60,
+        "reserve": 120,
+        "mods": 0
+      }
+    },
+    "fireFrames": [
+      "lmg.png",
+      "lmg_fire.png"
+    ],
+    "reloadFrames": [
+      "lmg.png",
+      "lmg_reload_box.png",
+      "lmg_reload_end.png",
+      "lmg_reload_start.png"
+    ],
+    "scaleStable": true,
+    "ammoBefore": {
+      "loaded": 59,
+      "reserve": 120,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 60,
+      "reserve": 119,
+      "mods": 0
+    },
+    "switchReset": true
+  },
+  {
+    "viewport": "mobile",
+    "weapon": "rocket",
+    "pickup": {
+      "collected": true,
+      "ammo": {
+        "loaded": 1,
+        "reserve": 5,
+        "mods": 0
+      }
+    },
+    "fireFrames": [
+      "rocket.png",
+      "rocket_fire.png"
+    ],
+    "reloadFrames": [
+      "rocket.png",
+      "rocket_reload_close.png",
+      "rocket_reload_insert.png",
+      "rocket_reload_open.png"
+    ],
+    "scaleStable": true,
+    "ammoBefore": {
+      "loaded": 0,
+      "reserve": 5,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 1,
+      "reserve": 4,
+      "mods": 0
+    },
+    "switchReset": true
+  },
+  {
+    "viewport": "mobile",
+    "boss": "crucible",
+    "poses": {
+      "idle": {
+        "key": "boss_idle.png",
+        "scale": 1,
+        "height": 120.60000000000001,
+        "bottom": 167.5
+      },
+      "walk_1": {
+        "key": "boss_walk_1.png",
+        "scale": 1,
+        "height": 120.60000000000001,
+        "bottom": 167.5
+      },
+      "walk_2": {
+        "key": "boss_walk_2.png",
+        "scale": 1,
+        "height": 120.60000000000001,
+        "bottom": 167.5
+      },
+      "attack": {
+        "key": "boss_attack.png",
+        "scale": 1,
+        "height": 120.60000000000001,
+        "bottom": 167.5
+      },
+      "hurt": {
+        "key": "boss_hurt.png",
+        "scale": 1,
+        "height": 120.60000000000001,
+        "bottom": 167.5
+      },
+      "death": {
+        "key": "boss_death.png",
+        "scale": 1,
+        "height": 120.60000000000001,
+        "bottom": 167.5
+      }
+    },
+    "errors": []
+  }
+]

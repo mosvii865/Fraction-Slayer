@@ -369,6 +369,7 @@ const Render = (() => {
       ...crucibleObjects,
       ...fs.config.level.items.filter((i) => !s.collected.includes(i.id)).map(i => ({
         ...i,
+        _weaponPickup: i.type === 'weapon',
         type: i.type === 'weapon' ? i.weapon : i.type === 'ammo' ? (['shotgun','sawed_off'].includes(i.weapon) ? 'shells' : ['assault','sniper','lmg','rocket','el_toro'].includes(i.weapon) ? i.weapon : 'pistol') : i.type
       })),
       ...fs.config.level.secrets.filter(i => i.on_shot && !s.progress.secrets[i.id]).map(i => ({
@@ -419,7 +420,7 @@ const Render = (() => {
         visual=window.FSArt.enemyFrameKey(o.type,{...ev,dead:!!o._visualDead},t);
       }
       // Presentation-only pickup path. Original item and collection trigger stay intact.
-      const pickupProfile=o.type==='shotgun' && o.weapon==='shotgun' ? window.FSArt?.pickupProfiles?.shotgun : null;
+      const pickupProfile=o._weaponPickup && o.type===o.weapon ? window.FSArt?.pickupProfiles?.[o.weapon] : null;
       const pickupArt=pickupProfile ? window.FSArt?.get("pickups",pickupProfile.key) : null;
       if(pickupArt) {
         const [sx,sy,sourceW,sourceH]=pickupProfile.bounds;
@@ -490,11 +491,11 @@ const Render = (() => {
     const bob = Math.sin(t * 10) * fs.moving * 3,
       recoil = Math.max(0, fs.shotFlash) * 30,
       rasterWeaponKey = window.FSArt?.weaponFrameKey
-        ? window.FSArt.weaponFrameKey(s.weapon, {reloading: fs.reloading, reloadDuration: fs.config.weapons[s.weapon]?.reload, shotFlash: fs.shotFlash, pumpAnim: fs.pumpAnim})
+        ? window.FSArt.weaponFrameKey(s.weapon, {...window.FSArt.weaponVisualState(fs,t), reloading: fs.reloading, reloadDuration: fs.config.weapons[s.weapon]?.reload, shotFlash: fs.shotFlash, pumpAnim: fs.pumpAnim})
         : ((s.weapon === "pistol" && fs.reloading > 0) ? "pistol_reload"
           : (s.weapon === "pistol" && fs.shotFlash > 0) ? "pistol_fire" : s.weapon),
       rasterWeapon = window.FSArt?.get("weapons", rasterWeaponKey)
-        || (s.weapon==="shotgun" ? window.FSArt?.get("weapons", "shotgun") : null) || null;
+        || (window.FSArt?.weaponProfiles?.[s.weapon] ? window.FSArt?.get("weapons", window.FSArt.weaponProfiles[s.weapon].idle) : null) || null;
     const cx = W * 0.55,
       wy = H + bob + recoil;
     const scale = H / 300;

@@ -1,0 +1,706 @@
+[
+  {
+    "level": "workshop",
+    "type": "loader",
+    "mobile": false,
+    "frames": {
+      "idle": {
+        "key": "loader_idle.png",
+        "height": 148.6470588235294,
+        "bottom": 233.58823529411765
+      },
+      "walk_1": {
+        "key": "loader_walk_1.png",
+        "height": 148.6470588235294,
+        "bottom": 233.58823529411765
+      },
+      "walk_2": {
+        "key": "loader_walk_2.png",
+        "height": 148.6470588235294,
+        "bottom": 233.58823529411765
+      },
+      "attack": {
+        "key": "loader_attack.png",
+        "height": 148.6470588235294,
+        "bottom": 233.58823529411765
+      },
+      "hurt": {
+        "key": "loader_hurt.png",
+        "height": 148.6470588235294,
+        "bottom": 233.58823529411765
+      },
+      "death": {
+        "key": "loader_death.png",
+        "height": 148.6470588235294,
+        "bottom": 233.58823529411765
+      }
+    },
+    "combat": {
+      "hpBefore": 250,
+      "hpAfter": 210.4,
+      "mode": "recovering",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "factory",
+    "type": "sentinel",
+    "mobile": false,
+    "frames": {
+      "idle": {
+        "key": "sentinel_idle.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      },
+      "walk_1": {
+        "key": "sentinel_walk_1.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      },
+      "walk_2": {
+        "key": "sentinel_walk_2.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      },
+      "attack": {
+        "key": "sentinel_attack.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      },
+      "hurt": {
+        "key": "sentinel_hurt.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      },
+      "death": {
+        "key": "sentinel_death.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      }
+    },
+    "combat": {
+      "hpBefore": 90,
+      "hpAfter": 60,
+      "mode": "pursuing",
+      "projectiles": 2,
+      "fault": false
+    }
+  },
+  {
+    "level": "factory",
+    "type": "gunner",
+    "mobile": false,
+    "frames": {
+      "idle": {
+        "key": "gunner_idle.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      },
+      "walk_1": {
+        "key": "gunner_walk_1.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      },
+      "walk_2": {
+        "key": "gunner_walk_2.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      },
+      "attack": {
+        "key": "gunner_attack.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      },
+      "hurt": {
+        "key": "gunner_hurt.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      },
+      "death": {
+        "key": "gunner_death.png",
+        "height": 106.17647058823529,
+        "bottom": 233.58823529411765
+      }
+    },
+    "combat": {
+      "hpBefore": 95,
+      "hpAfter": 66.2,
+      "mode": "pursuing",
+      "projectiles": 1,
+      "fault": false
+    }
+  },
+  {
+    "level": "factory",
+    "type": "foreman",
+    "mobile": false,
+    "frames": {
+      "idle": {
+        "key": "foreman_mk2_idle.png",
+        "height": 159.26470588235293,
+        "bottom": 233.58823529411765
+      },
+      "walk_1": {
+        "key": "foreman_mk2_walk_1.png",
+        "height": 159.26470588235293,
+        "bottom": 233.58823529411765
+      },
+      "walk_2": {
+        "key": "foreman_mk2_walk_2.png",
+        "height": 159.26470588235293,
+        "bottom": 233.58823529411765
+      },
+      "attack": {
+        "key": "foreman_mk2_attack.png",
+        "height": 159.26470588235293,
+        "bottom": 233.58823529411765
+      },
+      "hurt": {
+        "key": "foreman_mk2_hurt.png",
+        "height": 159.26470588235293,
+        "bottom": 233.58823529411765
+      },
+      "death": {
+        "key": "foreman_mk2_death.png",
+        "height": 159.26470588235293,
+        "bottom": 233.58823529411765
+      }
+    },
+    "combat": {
+      "hpBefore": 360,
+      "hpAfter": 332.4,
+      "mode": "charging",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "laboratory",
+    "type": "stalker",
+    "mobile": false,
+    "frames": {
+      "idle": {
+        "key": "stalker_idle.png",
+        "height": 106.17647058823533,
+        "bottom": 233.58823529411768
+      },
+      "walk_1": {
+        "key": "stalker_walk_1.png",
+        "height": 106.17647058823533,
+        "bottom": 233.58823529411768
+      },
+      "walk_2": {
+        "key": "stalker_walk_2.png",
+        "height": 106.17647058823533,
+        "bottom": 233.58823529411768
+      },
+      "attack": {
+        "key": "stalker_attack.png",
+        "height": 106.17647058823533,
+        "bottom": 233.58823529411768
+      },
+      "hurt": {
+        "key": "stalker_hurt.png",
+        "height": 106.17647058823533,
+        "bottom": 233.58823529411768
+      },
+      "death": {
+        "key": "stalker_death.png",
+        "height": 106.17647058823533,
+        "bottom": 233.58823529411768
+      }
+    },
+    "combat": {
+      "hpBefore": 82,
+      "hpAfter": 52,
+      "mode": "recovering",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "laboratory",
+    "type": "k32",
+    "mobile": false,
+    "frames": {
+      "idle": {
+        "key": "specimen_k32_idle.png",
+        "height": 164.57352941176478,
+        "bottom": 233.58823529411768
+      },
+      "walk_1": {
+        "key": "specimen_k32_walk_1.png",
+        "height": 164.57352941176478,
+        "bottom": 233.58823529411768
+      },
+      "walk_2": {
+        "key": "specimen_k32_walk_2.png",
+        "height": 164.57352941176478,
+        "bottom": 233.58823529411768
+      },
+      "attack": {
+        "key": "specimen_k32_attack.png",
+        "height": 164.57352941176478,
+        "bottom": 233.58823529411768
+      },
+      "hurt": {
+        "key": "specimen_k32_hurt.png",
+        "height": 164.57352941176478,
+        "bottom": 233.58823529411768
+      },
+      "death": {
+        "key": "specimen_k32_death.png",
+        "height": 164.57352941176478,
+        "bottom": 233.58823529411768
+      }
+    },
+    "combat": {
+      "hpBefore": 450,
+      "hpAfter": 423.6,
+      "mode": "pursuing",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "foundry",
+    "type": "furnace_hound",
+    "mobile": false,
+    "frames": {
+      "idle": {
+        "key": "furnace_hound_idle.png",
+        "height": 87.06470588235297,
+        "bottom": 233.58823529411768
+      },
+      "walk_1": {
+        "key": "furnace_hound_walk_1.png",
+        "height": 87.06470588235297,
+        "bottom": 233.58823529411768
+      },
+      "walk_2": {
+        "key": "furnace_hound_walk_2.png",
+        "height": 87.06470588235297,
+        "bottom": 233.58823529411768
+      },
+      "attack": {
+        "key": "furnace_hound_attack.png",
+        "height": 87.06470588235297,
+        "bottom": 233.58823529411768
+      },
+      "hurt": {
+        "key": "furnace_hound_hurt.png",
+        "height": 87.06470588235297,
+        "bottom": 233.58823529411768
+      },
+      "death": {
+        "key": "furnace_hound_death.png",
+        "height": 87.06470588235297,
+        "bottom": 233.58823529411768
+      }
+    },
+    "combat": {
+      "hpBefore": 78,
+      "hpAfter": 46.8,
+      "mode": "recovering",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "foundry",
+    "type": "forge_brute",
+    "mobile": false,
+    "frames": {
+      "idle": {
+        "key": "forge_brute_idle.png",
+        "height": 153.95588235294122,
+        "bottom": 233.58823529411768
+      },
+      "walk_1": {
+        "key": "forge_brute_walk_1.png",
+        "height": 153.95588235294122,
+        "bottom": 233.58823529411768
+      },
+      "walk_2": {
+        "key": "forge_brute_walk_2.png",
+        "height": 153.95588235294122,
+        "bottom": 233.58823529411768
+      },
+      "attack": {
+        "key": "forge_brute_attack.png",
+        "height": 153.95588235294122,
+        "bottom": 233.58823529411768
+      },
+      "hurt": {
+        "key": "forge_brute_hurt.png",
+        "height": 153.95588235294122,
+        "bottom": 233.58823529411768
+      },
+      "death": {
+        "key": "forge_brute_death.png",
+        "height": 153.95588235294122,
+        "bottom": 233.58823529411768
+      }
+    },
+    "combat": {
+      "hpBefore": 185,
+      "hpAfter": 138.01999999999998,
+      "mode": "pursuing",
+      "projectiles": 1,
+      "fault": false
+    }
+  },
+  {
+    "level": "workshop",
+    "type": "loader",
+    "mobile": true,
+    "frames": {
+      "idle": {
+        "key": "loader_idle.png",
+        "height": 110.35294117647057,
+        "bottom": 173.41176470588235
+      },
+      "walk_1": {
+        "key": "loader_walk_1.png",
+        "height": 110.35294117647057,
+        "bottom": 173.41176470588235
+      },
+      "walk_2": {
+        "key": "loader_walk_2.png",
+        "height": 110.35294117647057,
+        "bottom": 173.41176470588235
+      },
+      "attack": {
+        "key": "loader_attack.png",
+        "height": 110.35294117647057,
+        "bottom": 173.41176470588235
+      },
+      "hurt": {
+        "key": "loader_hurt.png",
+        "height": 110.35294117647057,
+        "bottom": 173.41176470588235
+      },
+      "death": {
+        "key": "loader_death.png",
+        "height": 110.35294117647057,
+        "bottom": 173.41176470588235
+      }
+    },
+    "combat": {
+      "hpBefore": 250,
+      "hpAfter": 210.4,
+      "mode": "recovering",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "factory",
+    "type": "sentinel",
+    "mobile": true,
+    "frames": {
+      "idle": {
+        "key": "sentinel_idle.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      },
+      "walk_1": {
+        "key": "sentinel_walk_1.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      },
+      "walk_2": {
+        "key": "sentinel_walk_2.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      },
+      "attack": {
+        "key": "sentinel_attack.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      },
+      "hurt": {
+        "key": "sentinel_hurt.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      },
+      "death": {
+        "key": "sentinel_death.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      }
+    },
+    "combat": {
+      "hpBefore": 90,
+      "hpAfter": 60,
+      "mode": "pursuing",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "factory",
+    "type": "gunner",
+    "mobile": true,
+    "frames": {
+      "idle": {
+        "key": "gunner_idle.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      },
+      "walk_1": {
+        "key": "gunner_walk_1.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      },
+      "walk_2": {
+        "key": "gunner_walk_2.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      },
+      "attack": {
+        "key": "gunner_attack.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      },
+      "hurt": {
+        "key": "gunner_hurt.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      },
+      "death": {
+        "key": "gunner_death.png",
+        "height": 78.8235294117647,
+        "bottom": 173.41176470588235
+      }
+    },
+    "combat": {
+      "hpBefore": 95,
+      "hpAfter": 66.2,
+      "mode": "pursuing",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "factory",
+    "type": "foreman",
+    "mobile": true,
+    "frames": {
+      "idle": {
+        "key": "foreman_mk2_idle.png",
+        "height": 118.23529411764704,
+        "bottom": 173.41176470588235
+      },
+      "walk_1": {
+        "key": "foreman_mk2_walk_1.png",
+        "height": 118.23529411764704,
+        "bottom": 173.41176470588235
+      },
+      "walk_2": {
+        "key": "foreman_mk2_walk_2.png",
+        "height": 118.23529411764704,
+        "bottom": 173.41176470588235
+      },
+      "attack": {
+        "key": "foreman_mk2_attack.png",
+        "height": 118.23529411764704,
+        "bottom": 173.41176470588235
+      },
+      "hurt": {
+        "key": "foreman_mk2_hurt.png",
+        "height": 118.23529411764704,
+        "bottom": 173.41176470588235
+      },
+      "death": {
+        "key": "foreman_mk2_death.png",
+        "height": 118.23529411764704,
+        "bottom": 173.41176470588235
+      }
+    },
+    "combat": {
+      "hpBefore": 360,
+      "hpAfter": 332.4,
+      "mode": "recovering",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "laboratory",
+    "type": "stalker",
+    "mobile": true,
+    "frames": {
+      "idle": {
+        "key": "stalker_idle.png",
+        "height": 78.82352941176474,
+        "bottom": 173.41176470588238
+      },
+      "walk_1": {
+        "key": "stalker_walk_1.png",
+        "height": 78.82352941176474,
+        "bottom": 173.41176470588238
+      },
+      "walk_2": {
+        "key": "stalker_walk_2.png",
+        "height": 78.82352941176474,
+        "bottom": 173.41176470588238
+      },
+      "attack": {
+        "key": "stalker_attack.png",
+        "height": 78.82352941176474,
+        "bottom": 173.41176470588238
+      },
+      "hurt": {
+        "key": "stalker_hurt.png",
+        "height": 78.82352941176474,
+        "bottom": 173.41176470588238
+      },
+      "death": {
+        "key": "stalker_death.png",
+        "height": 78.82352941176474,
+        "bottom": 173.41176470588238
+      }
+    },
+    "combat": {
+      "hpBefore": 82,
+      "hpAfter": 52,
+      "mode": "recovering",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "laboratory",
+    "type": "k32",
+    "mobile": true,
+    "frames": {
+      "idle": {
+        "key": "specimen_k32_idle.png",
+        "height": 122.17647058823535,
+        "bottom": 173.41176470588238
+      },
+      "walk_1": {
+        "key": "specimen_k32_walk_1.png",
+        "height": 122.17647058823535,
+        "bottom": 173.41176470588238
+      },
+      "walk_2": {
+        "key": "specimen_k32_walk_2.png",
+        "height": 122.17647058823535,
+        "bottom": 173.41176470588238
+      },
+      "attack": {
+        "key": "specimen_k32_attack.png",
+        "height": 122.17647058823535,
+        "bottom": 173.41176470588238
+      },
+      "hurt": {
+        "key": "specimen_k32_hurt.png",
+        "height": 122.17647058823535,
+        "bottom": 173.41176470588238
+      },
+      "death": {
+        "key": "specimen_k32_death.png",
+        "height": 122.17647058823535,
+        "bottom": 173.41176470588238
+      }
+    },
+    "combat": {
+      "hpBefore": 450,
+      "hpAfter": 423.6,
+      "mode": "pursuing",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "foundry",
+    "type": "furnace_hound",
+    "mobile": true,
+    "frames": {
+      "idle": {
+        "key": "furnace_hound_idle.png",
+        "height": 64.63529411764708,
+        "bottom": 173.41176470588238
+      },
+      "walk_1": {
+        "key": "furnace_hound_walk_1.png",
+        "height": 64.63529411764708,
+        "bottom": 173.41176470588238
+      },
+      "walk_2": {
+        "key": "furnace_hound_walk_2.png",
+        "height": 64.63529411764708,
+        "bottom": 173.41176470588238
+      },
+      "attack": {
+        "key": "furnace_hound_attack.png",
+        "height": 64.63529411764708,
+        "bottom": 173.41176470588238
+      },
+      "hurt": {
+        "key": "furnace_hound_hurt.png",
+        "height": 64.63529411764708,
+        "bottom": 173.41176470588238
+      },
+      "death": {
+        "key": "furnace_hound_death.png",
+        "height": 64.63529411764708,
+        "bottom": 173.41176470588238
+      }
+    },
+    "combat": {
+      "hpBefore": 78,
+      "hpAfter": 46.8,
+      "mode": "recovering",
+      "projectiles": 0,
+      "fault": false
+    }
+  },
+  {
+    "level": "foundry",
+    "type": "forge_brute",
+    "mobile": true,
+    "frames": {
+      "idle": {
+        "key": "forge_brute_idle.png",
+        "height": 114.29411764705887,
+        "bottom": 173.41176470588238
+      },
+      "walk_1": {
+        "key": "forge_brute_walk_1.png",
+        "height": 114.29411764705887,
+        "bottom": 173.41176470588238
+      },
+      "walk_2": {
+        "key": "forge_brute_walk_2.png",
+        "height": 114.29411764705887,
+        "bottom": 173.41176470588238
+      },
+      "attack": {
+        "key": "forge_brute_attack.png",
+        "height": 114.29411764705887,
+        "bottom": 173.41176470588238
+      },
+      "hurt": {
+        "key": "forge_brute_hurt.png",
+        "height": 114.29411764705887,
+        "bottom": 173.41176470588238
+      },
+      "death": {
+        "key": "forge_brute_death.png",
+        "height": 114.29411764705887,
+        "bottom": 173.41176470588238
+      }
+    },
+    "combat": {
+      "hpBefore": 185,
+      "hpAfter": 138.01999999999998,
+      "mode": "pursuing",
+      "projectiles": 1,
+      "fault": false
+    }
+  }
+]
