@@ -1,0 +1,74 @@
+[
+  {
+    "viewport": "desktop",
+    "pickup": {
+      "collected": true,
+      "weapon": {
+        "loaded": 8,
+        "reserve": 12,
+        "mods": 0
+      }
+    },
+    "firePumpKeys": [
+      "shotgun.png",
+      "shotgun_fire.png",
+      "shotgun_pump_back.png",
+      "shotgun_pump_forward.png"
+    ],
+    "reloadFrames": [
+      "shotgun.png",
+      "shotgun_reload_end.png",
+      "shotgun_reload_insert.png",
+      "shotgun_reload_start.png"
+    ],
+    "scaleConstant": true,
+    "ammoBefore": {
+      "loaded": 7,
+      "reserve": 12,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 8,
+      "reserve": 11,
+      "mods": 0
+    },
+    "switchAndNewRunReset": true,
+    "pageErrors": []
+  },
+  {
+    "viewport": "mobile",
+    "pickup": {
+      "collected": true,
+      "weapon": {
+        "loaded": 8,
+        "reserve": 12,
+        "mods": 0
+      }
+    },
+    "firePumpKeys": [
+      "shotgun.png",
+      "shotgun_fire.png",
+      "shotgun_pump_back.png",
+      "shotgun_pump_forward.png"
+    ],
+    "reloadFrames": [
+      "shotgun.png",
+      "shotgun_reload_end.png",
+      "shotgun_reload_insert.png",
+      "shotgun_reload_start.png"
+    ],
+    "scaleConstant": true,
+    "ammoBefore": {
+      "loaded": 7,
+      "reserve": 12,
+      "mods": 0
+    },
+    "ammoAfter": {
+      "loaded": 8,
+      "reserve": 11,
+      "mods": 0
+    },
+    "switchAndNewRunReset": true,
+    "pageErrors": []
+  }
+]

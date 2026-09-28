@@ -1,0 +1,38 @@
+{
+  "passed": 16,
+  "checks": [
+    "Streamlit HTTP health 200",
+    "Floating origin, deadzone, analog magnitude, smooth diagonals, clamp and release",
+    "Joystick + fire; releasing fire preserves movement",
+    "Second movement contact cannot steal/reset the joystick",
+    "Joystick + camera with independent capture",
+    "Joystick + camera + fire + weapon selector: four fingers and weapon switch while moving",
+    "Two-finger weapon switching works without a synthetic click",
+    "Reload and interaction away from stations preserve movement; buttons do not rotate camera",
+    "Independent fire contacts and OS touch cancellation leave no stuck inputs",
+    "Corner-only zone ignores upper-left touches; size, radius and vibration settings applied",
+    "Haptics gated, minimal pulses, unsupported browser is silent (API mocked)",
+    "Preferences and v0.1 save key persist across page reload",
+    "5 landscape viewports \u00d7 3 presets: large nonoverlapping buttons and selector inside safe gameplay bounds",
+    "Simulated notch/system-bar insets respected on all four sides",
+    "Portrait pause releases contacts; landscape restores layout and movement",
+    "No JavaScript page errors"
+  ],
+  "fire_sizes": {
+    "568x320/small": 96,
+    "568x320/medium": 101,
+    "568x320/large": 101,
+    "667x375/small": 96,
+    "667x375/medium": 116,
+    "667x375/large": 131,
+    "844x390/small": 96,
+    "844x390/medium": 116,
+    "844x390/large": 136,
+    "932x430/small": 96,
+    "932x430/medium": 116,
+    "932x430/large": 136,
+    "1024x768/small": 96,
+    "1024x768/medium": 116,
+    "1024x768/large": 136
+  }
+}

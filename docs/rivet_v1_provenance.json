@@ -1,0 +1,13 @@
+{
+  "base_zip": "Fraction_Slayer_v0.3-alpha2-crawler-v1-candidate.zip",
+  "base_sha256": "e6b354d3bc78516429d87145702bffc761b1b68ef048ccdb97a6df256828d786",
+  "reference": "image(20260927-220539).png",
+  "reference_sha256": "bc6374c017ceca6b845cb5453609f30749a6b8f661ee5c3c23530c65d8451f6f",
+  "modified_existing_files": [
+    "tests/test_crawler_visuals.py",
+    "tests/test_shotgun_polish.py",
+    "ui/frontend/art.js",
+    "ui/frontend/realtime.js",
+    "ui/frontend/renderer.js"
+  ]
+}

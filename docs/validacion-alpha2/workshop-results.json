@@ -1,0 +1,20 @@
+[
+  "clasico: new default Workshop, canvas/HUD and physical input events",
+  "clasico: encounter welcome",
+  "clasico: encounter assembly_first,assembly_second",
+  "clasico: encounter maintenance",
+  "clasico: encounter fuse_ambush",
+  "clasico: encounter generator_entry",
+  "clasico: Loader melee/slam/locked charge/wall stun/recovery/rear damage",
+  "clasico: encounter loader",
+  "clasico: full route, both MADs, fuse ambush once, power, death/respawn, v2 CONTINUAR, elevator + teaser; {\"kills\": 21, \"correct\": 5, \"attempted\": 6, \"streak\": 5, \"best_streak\": 5, \"seconds\": 77.20830000000035, \"secrets\": 3, \"damage\": 0, \"ammo_used\": 38, \"accuracy\": 83.3, \"score\": 3805, \"utcj_found\": 1, \"utcj_display\": \"1/4\"}",
+  "doom: new default Workshop, canvas/HUD and physical input events",
+  "doom: encounter welcome",
+  "doom: encounter assembly_first,assembly_second",
+  "doom: encounter maintenance",
+  "doom: encounter fuse_ambush",
+  "doom: encounter generator_entry",
+  "doom: Loader melee/slam/locked charge/wall stun/recovery/rear damage",
+  "doom: encounter loader",
+  "doom: full route, both MADs, fuse ambush once, power, death/respawn, v2 CONTINUAR, elevator + teaser; {\"kills\": 30, \"correct\": 5, \"attempted\": 6, \"streak\": 5, \"best_streak\": 5, \"seconds\": 85.16670000000218, \"secrets\": 2, \"damage\": 0, \"ammo_used\": 46, \"accuracy\": 83.3, \"score\": 4505, \"utcj_found\": 0, \"utcj_display\": \"???\"}"
+]

@@ -1,0 +1,18 @@
+{
+  "base": "Fraction_Slayer_v0.3-alpha2-rivet-v1-candidate(1).zip",
+  "sha256": "48db440129ff2edc365661e6ca11cdaeb3b12f16d4fea1adcd7463845df7a7c8",
+  "modified_existing_files": [
+    "tests/test_crawler_visuals.py",
+    "tests/test_rivet_visuals.py",
+    "tests/test_shotgun_polish.py",
+    "ui/frontend/art/props/sign_assembly.png",
+    "ui/frontend/art/props/sign_exit.png",
+    "ui/frontend/art/props/sign_generator.png",
+    "ui/frontend/art/props/sign_power.png",
+    "ui/frontend/art/props/sign_qc.png",
+    "ui/frontend/art/props/sign_tools.png",
+    "ui/frontend/art.js",
+    "ui/frontend/renderer.js"
+  ],
+  "gameplay_files_changed": []
+}

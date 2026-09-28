@@ -1,0 +1,15 @@
+"use strict";
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+let damage=0;
+global.FS={state:{player:{x:0,y:0,hp:100,armor:0,grace:0},difficulty:'clasico',stats:{seconds:0,kills:0},enemies:[],level_id:'foundry'},config:{difficulty:{speed:1,damage:8},enemies:{},level:{heat_zones:[],crucible_locks:[]}},projectiles:[],worldDirty:false};
+global.clearLine=()=>true;global.move=(e,vx,vy)=>{e.x+=vx;e.y+=vy;return false;};global.hurt=n=>{damage+=n};global.sound=()=>{};global.toast=()=>{};global.bossAlert=()=>{};
+vm.runInThisContext(fs.readFileSync('ui/frontend/foundry.js','utf8'),{filename:'foundry.js'});
+const hc={vision:15,search_seconds:9,radius:.22,heat_time:.72,leap_time:.5,recovery:1.05,leap_speed:5.3,track_delay:1.15,speed:1.42,range:.8};
+const h={id:'h',x:3,y:0,hound_mode:'track',phase_time:0,cooldown:0,ai_state:'idle',last_known:null,search_time:0,facing:0,attack_index:0};
+updateFurnaceHound(h,hc,.016);assert.strictEqual(h.hound_mode,'heat');assert.strictEqual(damage,0);
+h.phase_time=0;updateFurnaceHound(h,hc,.016);assert.strictEqual(h.hound_mode,'leap');
+const cc={hp:680,projectile_speed:4.4,lock_hp:90,emergency_lock_hp:120,exposure_seconds:8};
+const c={type:'crucible',x:12,y:35,hp:680,boss_mode:'pressure',phase_time:0,cooldown:0,attack_index:0,exposure_cycles:0,lock_a_hp:0,lock_b_hp:0,lock_c_hp:0,emergency_a_hp:0,emergency_b_hp:0,active:true};
+FS.state.player={x:2,y:35};FS.state.enemies=[c];FS.config.level.crucible_locks=[];updateCrucible(c,cc,.016);assert.strictEqual(c.boss_mode,'exposed1');
+c.hp=340;updateCrucible(c,cc,.016);assert.strictEqual(c.boss_mode,'meltdown');assert.strictEqual(c.emergency_a_hp,120);
+console.log('Foundry JS smoke: OK');

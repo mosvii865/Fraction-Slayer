@@ -1,0 +1,27 @@
+{
+  "name": "TypeError",
+  "message": "Cannot read properties of undefined (reading 'order')",
+  "stack": "TypeError: Cannot read properties of undefined (reading 'order')\n    at tick (eval at <anonymous> (eval at evaluate (:234:30)), <anonymous>:132:34)\n    at frame (http://127.0.0.1:8526/component/ui.game_component.fraction_slayer/controls.js:433:7)",
+  "stage": "CHECKPOINT_UPDATE",
+  "level_id": "industrial_test",
+  "checkpoint": null,
+  "bridge_busy": false,
+  "last_event": {
+    "id": "a6151df1-2c2f-4b1c-bb08-c68d1b94c020",
+    "action": "new",
+    "timestamp": "2026-09-24T06:06:08.584Z"
+  },
+  "state_null": false,
+  "state_undefined": false,
+  "timestamp": "2026-09-24T06:06:08.928Z",
+  "player": {
+    "x": 3.5,
+    "y": 4.5,
+    "hp": 100
+  },
+  "checkpoint_ids": [
+    "inicio",
+    "arena",
+    "final"
+  ]
+}

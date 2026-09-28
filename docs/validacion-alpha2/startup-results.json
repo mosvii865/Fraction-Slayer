@@ -1,0 +1,10 @@
+{
+  "passed": [
+    "clasico / PC: clean startup, pixels, HUD, input, first sync, null JS fixture, continue v2, advanced v2, v1/invalid rejected",
+    "doom / PC: clean startup, pixels, HUD, input, first sync, null JS fixture, continue v2, advanced v2, v1/invalid rejected",
+    "clasico / mobile: clean startup, pixels, HUD, input, first sync, null JS fixture, continue v2, advanced v2, v1/invalid rejected",
+    "doom / mobile: clean startup, pixels, HUD, input, first sync, null JS fixture, continue v2, advanced v2, v1/invalid rejected"
+  ],
+  "production_crashes": 0,
+  "controlled_unpatched_null_crash": true
+}

@@ -1,0 +1,25 @@
+{
+  "version": "v0.2-alpha2",
+  "python_tests": 101,
+  "python_result": "passed",
+  "streamlit": "1.55.0",
+  "playwright": "1.51.0",
+  "browser": "Chromium 134 headless",
+  "commands": {
+    "python -m pytest -q": "101 passed",
+    "python -m compileall -q game ui app.py": "passed",
+    "python tests/browser_startup.py": "passed",
+    "python tests/browser_smoke.py": "passed",
+    "python tests/browser_smoke.py --doom": "passed",
+    "python tests/mobile_controls.py": "passed",
+    "python tests/pc_controls.py": "passed",
+    "python tests/browser_engine.py": "passed",
+    "python tests/browser_workshop.py": "passed both modes, final route 2026-09-24",
+    "python tests/browser_workshop_feedback.py": "passed"
+  },
+  "limits": [
+    "Workshop routing uses test-only grace and accelerated ticks.",
+    "No physical alpha2 playtest or Community Cloud deployment.",
+    "Balance and 8–12 minute human duration remain unmeasured."
+  ]
+}

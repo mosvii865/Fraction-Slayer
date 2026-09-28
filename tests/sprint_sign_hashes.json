@@ -1,0 +1,8 @@
+{
+  "ui/frontend/art/props/sign_tools.png": "3e3c8f192536382efa26df9b3ba70553a0fced0c35a9ac9830ab635d7e9c5ff1",
+  "ui/frontend/art/props/sign_exit.png": "479d2b0c959406e8c907926e46759bfdc09ca9a5b7c1688fb891c922dc3143e5",
+  "ui/frontend/art/props/sign_generator.png": "ced3616c799e418f15bda45dc707f9a8db9f84d799e47d8ac25a0ec3656b2f91",
+  "ui/frontend/art/props/sign_qc.png": "cab7263aed9f15c165c112b3b3068beacb0089e23a23a36b38db31f1ce29d8a9",
+  "ui/frontend/art/props/sign_power.png": "dac5a099fff3f32a42eb9d1fad9d157cea0fc1cc1655cd33eeb64f5955085cd2",
+  "ui/frontend/art/props/sign_assembly.png": "a6f1909bdd8a788b2b0bc0743304b2c9b201fe37b5ee87dd0c49fbf7a17d883c"
+}

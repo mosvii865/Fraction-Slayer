@@ -1,0 +1,106 @@
+[
+  {
+    "viewport": "desktop",
+    "difficulty": "clasico",
+    "frames": {
+      "idle": {
+        "key": "rivet_idle.png",
+        "bottom": 249.92307692307693,
+        "height": 138.84615384615387,
+        "sourceH": 80
+      },
+      "walk_1": {
+        "key": "rivet_walk_1.png",
+        "bottom": 249.92307692307693,
+        "height": 138.84615384615387,
+        "sourceH": 80
+      },
+      "walk_2": {
+        "key": "rivet_walk_2.png",
+        "bottom": 249.92307692307693,
+        "height": 138.84615384615387,
+        "sourceH": 80
+      },
+      "attack": {
+        "key": "rivet_attack.png",
+        "bottom": 249.92307692307693,
+        "height": 138.84615384615387,
+        "sourceH": 80
+      },
+      "hurt": {
+        "key": "rivet_hurt.png",
+        "bottom": 249.92307692307693,
+        "height": 138.84615384615387,
+        "sourceH": 80
+      },
+      "death": {
+        "key": "rivet_death.png",
+        "bottom": 249.92307692307693,
+        "height": 138.84615384615387,
+        "sourceH": 80
+      }
+    },
+    "combat": {
+      "moving": true,
+      "attack": true,
+      "projectile": true,
+      "damaged": true,
+      "hurt": true,
+      "death": true,
+      "shots": 4
+    },
+    "errors": []
+  },
+  {
+    "viewport": "mobile",
+    "difficulty": "doom",
+    "frames": {
+      "idle": {
+        "key": "rivet_idle.png",
+        "bottom": 185.53846153846155,
+        "height": 103.0769230769231,
+        "sourceH": 80
+      },
+      "walk_1": {
+        "key": "rivet_walk_1.png",
+        "bottom": 185.53846153846155,
+        "height": 103.0769230769231,
+        "sourceH": 80
+      },
+      "walk_2": {
+        "key": "rivet_walk_2.png",
+        "bottom": 185.53846153846155,
+        "height": 103.0769230769231,
+        "sourceH": 80
+      },
+      "attack": {
+        "key": "rivet_attack.png",
+        "bottom": 185.53846153846155,
+        "height": 103.0769230769231,
+        "sourceH": 80
+      },
+      "hurt": {
+        "key": "rivet_hurt.png",
+        "bottom": 185.53846153846155,
+        "height": 103.0769230769231,
+        "sourceH": 80
+      },
+      "death": {
+        "key": "rivet_death.png",
+        "bottom": 185.53846153846155,
+        "height": 103.0769230769231,
+        "sourceH": 80
+      }
+    },
+    "combat": {
+      "moving": true,
+      "attack": true,
+      "projectile": true,
+      "damaged": true,
+      "hurt": true,
+      "death": true,
+      "shots": 4
+    },
+    "errors": []
+  }
+]

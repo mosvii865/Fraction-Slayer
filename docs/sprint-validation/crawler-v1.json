@@ -1,0 +1,104 @@
+[
+  {
+    "viewport": "desktop",
+    "difficulty": "clasico",
+    "frames": {
+      "idle": {
+        "key": "crawler_idle.png",
+        "bottom": 249.92307692307696,
+        "height": 94.41538461538464,
+        "sourceH": 56
+      },
+      "walk_1": {
+        "key": "crawler_walk_1.png",
+        "bottom": 249.92307692307696,
+        "height": 94.41538461538464,
+        "sourceH": 56
+      },
+      "walk_2": {
+        "key": "crawler_walk_2.png",
+        "bottom": 249.92307692307696,
+        "height": 94.41538461538464,
+        "sourceH": 56
+      },
+      "attack": {
+        "key": "crawler_attack.png",
+        "bottom": 249.92307692307696,
+        "height": 94.41538461538464,
+        "sourceH": 56
+      },
+      "hurt": {
+        "key": "crawler_hurt.png",
+        "bottom": 249.92307692307696,
+        "height": 94.41538461538464,
+        "sourceH": 56
+      },
+      "death": {
+        "key": "crawler_death.png",
+        "bottom": 249.92307692307696,
+        "height": 94.41538461538464,
+        "sourceH": 56
+      }
+    },
+    "combat": {
+      "moving": true,
+      "attack": true,
+      "damaged": true,
+      "hurt": true,
+      "death": true,
+      "shots": 2
+    },
+    "errors": []
+  },
+  {
+    "viewport": "mobile",
+    "difficulty": "doom",
+    "frames": {
+      "idle": {
+        "key": "crawler_idle.png",
+        "bottom": 185.53846153846155,
+        "height": 70.09230769230771,
+        "sourceH": 56
+      },
+      "walk_1": {
+        "key": "crawler_walk_1.png",
+        "bottom": 185.53846153846155,
+        "height": 70.09230769230771,
+        "sourceH": 56
+      },
+      "walk_2": {
+        "key": "crawler_walk_2.png",
+        "bottom": 185.53846153846155,
+        "height": 70.09230769230771,
+        "sourceH": 56
+      },
+      "attack": {
+        "key": "crawler_attack.png",
+        "bottom": 185.53846153846155,
+        "height": 70.09230769230771,
+        "sourceH": 56
+      },
+      "hurt": {
+        "key": "crawler_hurt.png",
+        "bottom": 185.53846153846155,
+        "height": 70.09230769230771,
+        "sourceH": 56
+      },
+      "death": {
+        "key": "crawler_death.png",
+        "bottom": 185.53846153846155,
+        "height": 70.09230769230771,
+        "sourceH": 56
+      }
+    },
+    "combat": {
+      "moving": true,
+      "attack": true,
+      "damaged": true,
+      "hurt": true,
+      "death": true,
+      "shots": 2
+    },
+    "errors": []
+  }
+]
